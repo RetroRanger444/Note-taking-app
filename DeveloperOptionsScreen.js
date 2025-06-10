@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   View,
@@ -20,7 +19,6 @@ export default function DeveloperOptionsScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
         {/* API Access Section */}
         <Text style={styles.sectionTitle}>API Access</Text>
         <View style={[styles.optionRow, { alignItems: 'flex-start' }]}>
@@ -97,26 +95,6 @@ export default function DeveloperOptionsScreen({ navigation }) {
           </View>
         )}
       </ScrollView>
-
-      {/* NavBar copied from AppearanceScreen */}
-      <View style={styles.navBarWrapper}>
-        <View style={styles.navBarLine} />
-        <View style={styles.navBarBackground} />
-        <View style={styles.navInner}>
-          <TouchableOpacity>
-            <Ionicons name="home" size={20} color="#DADADA" />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Ionicons name="search" size={20} color="#DADADA" />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Ionicons name="add" size={28} color="#DADADA" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-            <Ionicons name="settings" size={20} color="#DADADA" />
-          </TouchableOpacity>
-        </View>
-      </View>
     </View>
   );
 }
@@ -155,40 +133,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 0.5,
     borderBottomColor: '#333',
-  },
-  navBarWrapper: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  navBarLine: {
-    position: 'absolute',
-    top: 0,
-    width: '100%',
-    height: 0.5,
-    backgroundColor: '#444',
-    zIndex: 1,
-  },
-  navBarBackground: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#121212',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  navInner: {
-    flexDirection: 'row',
-    backgroundColor: '#121212',
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    columnGap: 50,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '90%',
-    marginBottom: 40,
   },
 });
