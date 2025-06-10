@@ -5,14 +5,17 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Modal from 'react-native-modal';
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 export default function ImportExportScreen({ navigation }) {
   const [selectedOption, setSelectedOption] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const handleSelection = (type) => {
     setSelectedOption(type);
@@ -20,13 +23,17 @@ export default function ImportExportScreen({ navigation }) {
 
   const handleDone = () => {
     if (!selectedOption) return;
-    Alert.alert(
-      'Success',
-      selectedOption.includes('Import')
-        ? 'Files have been imported'
-        : 'Files have been exported'
-    );
-    setSelectedOption(null);
+    setShowModal(true);
+    setShowConfetti(true);
+
+    setTimeout(() => {
+      setShowConfetti(false);
+    }, 3000); // Stop confetti after 3s
+
+    setTimeout(() => {
+      setShowModal(false);
+      setSelectedOption(null);
+    }, 2000); // Close modal after 2s
   };
 
   const renderOption = (fileType, label, type) => (
@@ -81,6 +88,28 @@ export default function ImportExportScreen({ navigation }) {
           <Text style={styles.doneButton}>Done</Text>
         </TouchableOpacity>
       </View>
+
+      <Modal isVisible={showModal}>
+  <View style={styles.modalContainer}>
+    {/* Confetti inside modal so it appears on top */}
+    {showConfetti && (
+      <ConfettiCannon
+        count={100}
+        origin={{ x: 200, y: -400 }}
+        fadeOut
+        fallSpeed={2000}
+      />
+    )}
+    <Text style={styles.modalTitle}>Success</Text>
+    <Text style={styles.modalMessage}>
+      {selectedOption?.includes('Import')
+        ? 'Files have been imported'
+        : 'Files have been exported'}
+    </Text>
+  </View>
+</Modal>
+
+
     </View>
   );
 }
@@ -160,5 +189,23 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 14,
     fontFamily: 'Inter_700Bold',
+  },
+  modalContainer: {
+    backgroundColor: '#1e1e1e',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontFamily: 'Inter_700Bold',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    color: '#AAAAAA',
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    textAlign: 'center',
   },
 });
