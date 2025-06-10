@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   View,
@@ -37,12 +36,12 @@ export default function SettingsScreen({ navigation }) {
       {renderItem('Templates')}
       {renderItem('Appearance', 'Appearance')}
       {renderItem('Sync')}
-      {renderItem('Notifications')}
+      {renderItem('Notifications', 'NotificationsScreen')}
       {renderItem('Privacy')}
 
       {/* Advanced Section */}
       <Text style={styles.sectionTitle}>Advanced</Text>
-      {renderItem('Data Import/Export')}
+      {renderItem('Data Import/Export', 'ImportExport')}
       {renderItem('Developer Options', 'Developer Options')}
       {/* Version at the bottom */}
       <Text style={styles.versionText}>Version 1.2.3</Text>
@@ -90,11 +89,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
   },
   versionText: {
-  color: '#888',
-  fontSize: 13,
-  textAlign: 'center',
-  marginTop: 'auto',
-  marginBottom: 50,
-  fontFamily: 'Inter_400Regular',
-},
+    color: '#888',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 'auto',
+    marginBottom: 50,
+    fontFamily: 'Inter_400Regular',
+  },
 });
