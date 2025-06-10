@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: '#FFFFFF',
     fontSize: 20,
-    fontFamily: 'Inter_700Bold',
+    fontFamily: 'Inter_700Bold', // Make sure you have this font loaded if used
     marginLeft: 12,
   },
   sectionTitle: {
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#FFFFFF',
     fontSize: 15,
-    fontFamily: 'Inter_700Bold',
+    fontFamily: 'Inter_700Bold', // Make sure you have this font loaded if used
   },
   itemRow: {
     flexDirection: 'row',
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   label: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'Inter_400Regular', // Make sure you have this font loaded if used
   },
   versionText: {
     color: '#888',
@@ -94,6 +94,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 'auto',
     marginBottom: 50,
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'Inter_400Regular', // Make sure you have this font loaded if used
   },
 });
