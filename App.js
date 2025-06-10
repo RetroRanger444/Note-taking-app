@@ -8,6 +8,9 @@ import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/in
 import SettingsScreen from './screens/SettingsScreen';
 import AppearanceScreen from './screens/AppearanceScreen';
 import DeveloperOptionsScreen from './screens/DeveloperOptionsScreen';
+import ImportExportScreen from './screens/ImportExportScreen';
+import NotificationsScreen from './screens/NotificationsScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -38,6 +41,8 @@ export default function App() {
         <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Appearance" component={AppearanceScreen} />
         <Stack.Screen name="Developer Options" component={DeveloperOptionsScreen} />
+        <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="ImportExport" component={ImportExportScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
