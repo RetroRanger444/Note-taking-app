@@ -27,7 +27,10 @@ export default function SettingsScreen({ navigation }) {
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: theme.spacing.md }}
+        contentContainerStyle={{
+          paddingHorizontal: theme.spacing.md,
+          paddingBottom: theme.spacing.xl,
+        }}
       >
         {/* Appearance Section */}
         <Text style={styles.sectionTitle}>Appearance</Text>
@@ -51,8 +54,8 @@ export default function SettingsScreen({ navigation }) {
           onPress={() => goTo('Display')}
         />
 
-        {/* Notifications Section */}
-        <Text style={styles.sectionTitle}>Notifications</Text>
+        {/* General Section */}
+        <Text style={styles.sectionTitle}>General</Text>
         <ListItem
           label="Push Notifications"
           icon="notifications"
@@ -60,9 +63,6 @@ export default function SettingsScreen({ navigation }) {
           value={notifications}
           onValueChange={setNotifications}
         />
-
-        {/* Sync & Backup Section */}
-        <Text style={styles.sectionTitle}>Sync & Backup</Text>
         <ListItem
           label="Auto Sync"
           icon="sync"
@@ -76,15 +76,34 @@ export default function SettingsScreen({ navigation }) {
           subtitle="Transfer your data"
           onPress={() => goTo('ImportExport')}
         />
-
-        {/* Security Section */}
-        <Text style={styles.sectionTitle}>Security</Text>
         <ListItem
           label="Biometric Auth"
           icon="finger-print"
           type="toggle"
           value={biometricAuth}
           onValueChange={setBiometricAuth}
+        />
+
+        {/* Advanced Section */}
+        <Text style={styles.sectionTitle}>Advanced</Text>
+        <ListItem
+          label="Storage"
+          icon="server"
+          type="value"
+          value="2.3 GB used"
+          onPress={() => goTo('Storage')}
+        />
+        <ListItem
+          label="Performance"
+          icon="speedometer"
+          subtitle="Optimize app"
+          onPress={() => goTo('Performance')}
+        />
+        <ListItem
+          label="Language"
+          icon="language"
+          subtitle="English"
+          onPress={() => goTo('Language')}
         />
 
         {/* About Section */}
