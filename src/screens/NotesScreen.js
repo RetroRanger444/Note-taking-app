@@ -1,446 +1,437 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, Modal, StatusBar, Platform } from 'react-native';
-import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  Modal,
+  Alert,
+  TextInput,
+  StatusBar,
+} from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Import the view components
+import { useTheme } from '../theme/ThemeContext';
+import { getGlobalStyles } from '../styles/globalStyles';
 import GalleryView from './GalleryView';
 import CalendarView from './CalendarView';
 
-const notes = [
-  {
-    id: '1',
-    title: 'Project Kickoff',
-    date: '2024-01-15',
-    content: `Agenda:\n- Introductions\n- Project Scope\n- Timeline\n\nAction Items:\n- Assign team roles\n- Finalize budget`,
-  },
-  {
-    id: '2',
-    title: 'Client Meeting',
-    date: '2024-01-16',
-    content: `Meeting Summary:\n- Client expectations clarified\n- Feedback on initial prototype\n\nNext Steps:\n- Update wireframes\n- Schedule follow-up`,
-  },
-  {
-    id: '3',
-    title: 'Design Review',
-    date: '2024-01-17',
-    content: `Design Elements:\n- Typography & Colors\n- Layout Grid\n\nFeedback:\n- Reduce padding\n- Try alternative icon set`,
-  },
-  {
-    id: '4',
-    title: 'Development Sprint',
-    date: '2024-01-18',
-    content: `Sprint Goals:\n- Complete user authentication\n- Implement dashboard\n- Set up database`,
-  },
-  {
-    id: '5',
-    title: 'Testing Phase',
-    date: '2024-01-19',
-    content: `Testing Plan:\n- Unit tests\n- Integration tests\n- User acceptance testing`,
-  },
-  {
-    id: '6',
-    title: 'Project Launch',
-    date: '2024-01-20',
-    content: `Launch Checklist:\n- Final deployment\n- Monitor performance\n- Gather user feedback`,
-  },
-];
+// Helper to get notes directory
+const getNotesDirectory = () => `${FileSystem.documentDirectory}vellum_notes/`;
 
-// Pixelated Vellum Logo Component
-const PixelatedVellum = () => (
-  <View style={styles.pixelLogo}>
-    <Text style={styles.pixelText}>VELLUM</Text>
-  </View>
-);
+// Custom Alert Component
+const CustomAlert = ({ visible, title, message, onConfirm, onCancel, type = 'info', theme, styles }) => {
+  if (!visible) return null;
+  const localStyles = createLocalStyles(theme);
 
-// Table view component
-const TableView = ({ notes }) => (
-  <View style={styles.tableContainer}>
-    <FlatList
-      data={notes}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <TouchableOpacity 
-          style={styles.noteItem}
-          activeOpacity={0.7}
-        >
-          <View style={styles.noteIcon}>
-            <MaterialCommunityIcons name="note-text-outline" size={20} color="#FFFFFF" />
+  return (
+    <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onCancel}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContainer, localStyles.alertContainer]}>
+          <Text style={styles.modalTitle}>{title}</Text>
+          <Text style={styles.modalMessage}>{message}</Text>
+          <View style={localStyles.alertButtons}>
+            {onCancel && (
+              <TouchableOpacity style={[localStyles.alertButton, localStyles.cancelButton]} onPress={onCancel}>
+                <Text style={localStyles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[localStyles.alertButton, type === 'destructive' && localStyles.destructiveButton]}
+              onPress={onConfirm}
+            >
+              <Text style={[localStyles.confirmButtonText, type === 'destructive' && { color: theme.colors.danger }]}>
+                {type === 'destructive' ? 'Delete' : 'OK'}
+              </Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.noteContent}>
-            <Text style={styles.noteTitle}>{item.title}</Text>
-            <Text style={styles.noteDate}>{item.date}</Text>
-          </View>
-        </TouchableOpacity>
-      )}
-      showsVerticalScrollIndicator={false}
-    />
-  </View>
-);
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
-// Updated Calendar view component - now navigates to full calendar screen
-const CalendarViewContainer = ({ navigation }) => (
-  <CalendarView navigation={navigation} />
-);
+// Trash Modal Component
+const TrashModal = ({ visible, onClose, trashedNotes, onRestoreNote, onPermanentDelete, theme, styles }) => {
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState(null);
+  const localStyles = createLocalStyles(theme);
 
-const NotesScreen = ({ navigation }) => {
-  const [activeTab, setActiveTab] = useState('Notes');
-  const [showMenu, setShowMenu] = useState(false);
-
-  const tabs = ['Notes', 'Calendar', 'Gallery'];
-
-  const menuItems = [
-    { id: 1, title: 'Create Folder', icon: 'folder-plus', iconType: 'feather' },
-    { id: 2, title: 'Tags Manager', icon: 'tag', iconType: 'feather' },
-    { id: 3, title: 'Archive', icon: 'archive', iconType: 'feather' },
-    { id: 4, title: 'Trash', icon: 'trash-2', iconType: 'feather' },
-    { id: 5, title: 'Export Notes', icon: 'download', iconType: 'feather' },
-    { id: 6, title: 'Settings', icon: 'settings', iconType: 'feather' },
-  ];
-
-  const handleMenuItemPress = (item) => {
-    console.log(`${item.title} pressed`);
-    setTimeout(() => {
-      setShowMenu(false);
-      // Add navigation or action logic here
-    }, 50);
+  const handlePermanentDelete = (note) => {
+    setNoteToDelete(note);
+    setShowDeleteAlert(true);
   };
 
-  const handleTabPress = (tab) => {
-    setTimeout(() => {
-      setActiveTab(tab);
-    }, 50);
-  };
-
-  const renderMenuIcon = (item) => {
-    if (item.iconType === 'feather') {
-      return <Feather name={item.icon} size={20} color="#FFFFFF" />;
-    }
-    return <Ionicons name={item.icon} size={20} color="#FFFFFF" />;
+  const confirmPermanentDelete = () => {
+    if (noteToDelete) onPermanentDelete(noteToDelete.id);
+    setShowDeleteAlert(false);
+    setNoteToDelete(null);
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#111" />
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity 
-            onPress={() => setTimeout(() => setShowMenu(true), 50)} 
-            style={styles.menuButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="menu" size={26} color="#FFFFFF" />
-          </TouchableOpacity>
+    <>
+      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+        <View style={localStyles.modalSheetContainer}>
+          <View style={styles.modalSheetHeader}>
+            <TouchableOpacity onPress={onClose} style={styles.iconButton}><Ionicons name="close" size={24} color={theme.colors.text} /></TouchableOpacity>
+            <Text style={styles.headerTitle}>Trash</Text>
+            <View style={{ width: 40 }} />
+          </View>
+          <View style={styles.flex1}>
+            {trashedNotes.length === 0 ? (
+              <View style={styles.emptyStateContainer}>
+                <MaterialCommunityIcons name="delete-empty" size={48} color={theme.colors.textMuted} />
+                <Text style={styles.emptyStateText}>Trash is empty</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={trashedNotes}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <View style={localStyles.trashNoteItem}>
+                    <View style={styles.flex1}>
+                      <Text style={styles.text}>{item.title}</Text>
+                      <Text style={styles.textSecondary}>{new Date(item.deletedAt).toLocaleString()}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.iconButton} onPress={() => onRestoreNote(item)}><Ionicons name="refresh" size={22} color={theme.colors.success} /></TouchableOpacity>
+                    <TouchableOpacity style={styles.iconButton} onPress={() => handlePermanentDelete(item)}><Ionicons name="trash" size={22} color={theme.colors.danger} /></TouchableOpacity>
+                  </View>
+                )}
+              />
+            )}
+          </View>
         </View>
-        
-        <View style={styles.headerCenter}>
-          <PixelatedVellum />
+      </Modal>
+      <CustomAlert
+        visible={showDeleteAlert}
+        title="Permanent Delete"
+        message={`Are you sure you want to permanently delete "${noteToDelete?.title}"?`}
+        onConfirm={confirmPermanentDelete}
+        onCancel={() => setShowDeleteAlert(false)}
+        type="destructive"
+        theme={theme}
+        styles={styles}
+      />
+    </>
+  );
+};
+
+// Note Modal for creating and editing notes
+const NoteModal = ({ visible, onClose, onSave, note, theme, styles }) => {
+  const isEditing = !!note;
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const localStyles = createLocalStyles(theme);
+
+  useEffect(() => {
+    if (note) {
+      setTitle(note.title);
+      setContent(note.content);
+    } else {
+      setTitle('');
+      setContent('');
+    }
+  }, [note, visible]);
+
+  const handleSave = () => {
+    if (!title.trim() && !content.trim()) {
+      Alert.alert('Empty Note', 'Please enter a title or content.');
+      return;
+    }
+    onSave({
+      id: isEditing ? note.id : Date.now().toString(),
+      title: title.trim() || 'Untitled Note',
+      content: content.trim(),
+      isEditing
+    });
+    onClose();
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={localStyles.modalSheetContainer}>
+        <View style={styles.modalSheetHeader}>
+          <TouchableOpacity onPress={onClose} style={styles.iconButton}><Text style={styles.headerActionText}>Cancel</Text></TouchableOpacity>
+          <Text style={styles.headerTitle}>{isEditing ? 'Edit Note' : 'New Note'}</Text>
+          <TouchableOpacity onPress={handleSave} style={styles.iconButton}><Text style={styles.headerActionText}>Save</Text></TouchableOpacity>
         </View>
-        
-        <View style={styles.headerRight}>
-          <TouchableOpacity 
-            onPress={() => console.log('Add note')} 
-            style={styles.iconButton}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add" size={26} color="#FFFFFF" />
-          </TouchableOpacity>
+        <View style={{ padding: theme.spacing.md }}>
+          <TextInput style={localStyles.titleInput} placeholder="Note title..." placeholderTextColor={theme.colors.textMuted} value={title} onChangeText={setTitle} />
+          <TextInput style={localStyles.contentInput} placeholder="Start writing..." placeholderTextColor={theme.colors.textMuted} value={content} onChangeText={setContent} multiline textAlignVertical="top" />
         </View>
       </View>
+    </Modal>
+  );
+};
 
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => handleTabPress(tab)}
-            style={styles.tabButton}
-            activeOpacity={0.7}
-          >
-            <Text style={activeTab === tab ? styles.activeTabText : styles.tabText}>
-              {tab}
-            </Text>
+// TableView component to display notes
+const TableView = ({ notes, onDeleteNote, onOpenNote, theme, styles }) => {
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState(null);
+
+  const handleDeletePress = (note) => {
+    setNoteToDelete(note);
+    setShowDeleteAlert(true);
+  };
+
+  const confirmDelete = () => {
+    if (noteToDelete) onDeleteNote(noteToDelete.id);
+    setShowDeleteAlert(false);
+    setNoteToDelete(null);
+  };
+
+  return (
+    <View style={styles.flex1}>
+      {notes.length === 0 ? (
+        <View style={styles.emptyStateContainer}>
+          <MaterialCommunityIcons name="note-text-outline" size={48} color={theme.colors.textMuted} />
+          <Text style={styles.emptyStateText}>No notes yet</Text>
+          <Text style={styles.emptyStateSubtext}>Tap the + button to create your first note</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={notes}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => onOpenNote(item)} onLongPress={() => handleDeletePress(item)}>
+              <Text style={styles.cardTitle}>{item.title}</Text>
+              <Text style={[styles.textMuted, { marginBottom: theme.spacing.sm }]}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+              <Text style={styles.cardContent} numberOfLines={3}>{item.content}</Text>
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={{ padding: theme.spacing.md }}
+        />
+      )}
+      <CustomAlert
+        visible={showDeleteAlert}
+        title="Delete Note"
+        message={`Are you sure you want to delete "${noteToDelete?.title}"?`}
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteAlert(false)}
+        type="destructive"
+        theme={theme}
+        styles={styles}
+      />
+    </View>
+  );
+};
+
+export default function NotesScreen({ navigation }) {
+  const { theme } = useTheme();
+  const styles = getGlobalStyles(theme);
+
+  const [activeTab, setActiveTab] = useState('Notes');
+  const [showCreateNote, setShowCreateNote] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
+  const [notes, setNotes] = useState([]);
+  const [trashedNotes, setTrashedNotes] = useState([]);
+  const [editingNote, setEditingNote] = useState(null);
+
+  const TABS = ['Notes', 'Calendar', 'Gallery'];
+
+  const ensureDirectoryExists = async (dir) => {
+    const dirInfo = await FileSystem.getInfoAsync(dir);
+    if (!dirInfo.exists) await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+  };
+
+  const loadNotes = async () => {
+    try {
+      const storedNotes = await AsyncStorage.getItem('vellum_notes');
+      if (storedNotes) {
+        const parsedNotes = JSON.parse(storedNotes);
+        parsedNotes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setNotes(parsedNotes);
+      }
+    } catch (error) { console.error('Error loading notes:', error); }
+  };
+
+  const loadTrashedNotes = async () => {
+    try {
+      const storedTrashedNotes = await AsyncStorage.getItem('vellum_trash');
+      if (storedTrashedNotes) setTrashedNotes(JSON.parse(storedTrashedNotes));
+    } catch (error) { console.error('Error loading trashed notes:', error); }
+  };
+
+  useEffect(() => {
+    loadNotes();
+    loadTrashedNotes();
+    // Simplified: Permissions would be requested here
+  }, []);
+
+  const saveNote = async (noteData) => {
+    let updatedNotes;
+    if (noteData.isEditing) {
+      updatedNotes = notes.map(n => n.id === noteData.id ? { ...n, ...noteData, updatedAt: new Date().toISOString() } : n);
+    } else {
+      const newNote = { ...noteData, date: new Date().toISOString().split('T')[0], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      updatedNotes = [newNote, ...notes];
+    }
+    setNotes(updatedNotes);
+    await AsyncStorage.setItem('vellum_notes', JSON.stringify(updatedNotes));
+    // FileSystem saving logic would go here
+  };
+
+  const deleteNote = async (noteId) => {
+    const noteToTrash = notes.find(note => note.id === noteId);
+    if (!noteToTrash) return;
+
+    const trashedNote = { ...noteToTrash, deletedAt: new Date().toISOString() };
+    const updatedNotes = notes.filter(note => note.id !== noteId);
+    const updatedTrashedNotes = [trashedNote, ...trashedNotes];
+
+    setNotes(updatedNotes);
+    setTrashedNotes(updatedTrashedNotes);
+
+    await AsyncStorage.setItem('vellum_notes', JSON.stringify(updatedNotes));
+    await AsyncStorage.setItem('vellum_trash', JSON.stringify(updatedTrashedNotes));
+  };
+
+  const restoreNote = async (noteToRestore) => {
+    const updatedTrashedNotes = trashedNotes.filter(note => note.id !== noteToRestore.id);
+    delete noteToRestore.deletedAt;
+    const updatedNotes = [noteToRestore, ...notes];
+
+    setTrashedNotes(updatedTrashedNotes);
+    setNotes(updatedNotes);
+
+    await AsyncStorage.setItem('vellum_notes', JSON.stringify(updatedNotes));
+    await AsyncStorage.setItem('vellum_trash', JSON.stringify(updatedTrashedNotes));
+  };
+
+  const permanentlyDeleteNote = async (noteId) => {
+    const updatedTrashedNotes = trashedNotes.filter(note => note.id !== noteId);
+    setTrashedNotes(updatedTrashedNotes);
+    await AsyncStorage.setItem('vellum_trash', JSON.stringify(updatedTrashedNotes));
+  };
+
+  const openNote = (note) => {
+    setEditingNote(note);
+    setShowCreateNote(true);
+  };
+
+  const handleAddNote = () => {
+    setEditingNote(null);
+    setShowCreateNote(true);
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'Notes':
+        return <TableView notes={notes} onDeleteNote={deleteNote} onOpenNote={openNote} theme={theme} styles={styles} />;
+      case 'Calendar':
+        return <CalendarView />;
+      case 'Gallery':
+        return <GalleryView />;
+      default: return null;
+    }
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <StatusBar barStyle={theme.key === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => setShowTrash(true)} style={styles.iconButton}>
+          <Ionicons name="trash-outline" size={26} color={theme.colors.text} />
+          {trashedNotes.length > 0 && <View style={createLocalStyles(theme).trashBadge}><Text style={createLocalStyles(theme).trashBadgeText}>{trashedNotes.length}</Text></View>}
+        </TouchableOpacity>
+        <Text style={styles.logoText}>VELLUM</Text>
+        <TouchableOpacity onPress={handleAddNote} style={styles.iconButton}>
+          <Ionicons name="add" size={26} color={theme.colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.tabBar}>
+        {TABS.map(tab => (
+          <TouchableOpacity key={tab} style={styles.tabButton} onPress={() => setActiveTab(tab)}>
+            <Text style={[styles.tabButtonText, activeTab === tab && styles.activeTabButtonText]}>{tab}</Text>
             {activeTab === tab && <View style={styles.activeTabIndicator} />}
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Content Views */}
-      <View style={styles.contentContainer}>
-        {activeTab === 'Notes' && <TableView notes={notes} />}
-        {activeTab === 'Calendar' && <CalendarViewContainer navigation={navigation} />}
-        {activeTab === 'Gallery' && <GalleryView notes={notes} />}
-      </View>
+      <View style={styles.flex1}>{renderContent()}</View>
 
-      {/* Hamburger Menu Modal */}
-      <Modal
-        visible={showMenu}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowMenu(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
-          onPress={() => setTimeout(() => setShowMenu(false), 50)}
-        >
-          <View style={styles.menuContainer}>
-            <View style={styles.menuHeader}>
-              <Text style={styles.menuTitle}>Menu</Text>
-              <TouchableOpacity 
-                onPress={() => setTimeout(() => setShowMenu(false), 50)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="close" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-            
-            <FlatList
-              data={menuItems}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={styles.menuItem}
-                  onPress={() => handleMenuItemPress(item)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.menuIconContainer}>
-                    {renderMenuIcon(item)}
-                  </View>
-                  <Text style={styles.menuItemText}>{item.title}</Text>
-                  <Ionicons name="chevron-forward" size={20} color="#888" />
-                </TouchableOpacity>
-              )}
-              showsVerticalScrollIndicator={false}
-            />
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <NoteModal visible={showCreateNote} onClose={() => setShowCreateNote(false)} onSave={saveNote} note={editingNote} theme={theme} styles={styles} />
+      <TrashModal visible={showTrash} onClose={() => setShowTrash(false)} trashedNotes={trashedNotes} onRestoreNote={restoreNote} onPermanentDelete={permanentlyDeleteNote} theme={theme} styles={styles} />
     </View>
   );
-};
+}
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#111',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 50,
+// Local styles specific to NotesScreen
+const createLocalStyles = (theme) => StyleSheet.create({
+  alertContainer: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
-  header: {
+  alertButtons: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    minHeight: 48,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    marginTop: theme.spacing.md,
   },
-  headerLeft: {
+  alertButton: {
     flex: 1,
-    alignItems: 'flex-start',
-  },
-  headerCenter: {
-    flex: 2,
+    padding: theme.spacing.md,
     alignItems: 'center',
   },
-  headerRight: {
+  cancelButton: {
+    borderRightWidth: 1,
+    borderRightColor: theme.colors.border,
+  },
+  confirmButtonText: {
+    color: theme.colors.primary,
+    fontFamily: theme.typography.fontFamily.bold,
+    fontSize: theme.typography.fontSize.md,
+  },
+  cancelButtonText: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.typography.fontFamily.semiBold,
+    fontSize: theme.typography.fontSize.md,
+  },
+  modalSheetContainer: {
     flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  trashNoteItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    padding: theme.spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.border,
   },
-  menuButton: {
-    padding: 12,
-    minHeight: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
+  titleInput: {
+    color: theme.colors.text,
+    fontSize: theme.typography.fontSize.h2,
+    fontFamily: theme.typography.fontFamily.bold,
+    paddingBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
-  pixelLogo: {
-    alignItems: 'center',
-  },
-  pixelText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    letterSpacing: 4,
-    textShadowColor: '#333',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 0,
-    fontFamily: 'Montserrat-Black',
-    textTransform: 'uppercase',
-  },
-  iconButton: {
-    marginLeft: 12,
-    padding: 12,
-    minHeight: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 30,
-    marginBottom: 20,
-    justifyContent: 'flex-start',
-    gap: 30,
-  },
-  tabButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 0,
-    position: 'relative',
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  tabText: {
-    color: '#888',
-    fontSize: 15,
-    paddingBottom: 6,
-    fontFamily: 'Montserrat-SemiBold',
-  },
-  activeTabText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    paddingBottom: 6,
-    fontFamily: 'Montserrat-Bold',
-  },
-  contentContainer: {
+  contentInput: {
+    color: theme.colors.text,
+    fontSize: theme.typography.fontSize.md,
+    fontFamily: theme.typography.fontFamily.regular,
     flex: 1,
+    minHeight: 200,
   },
-  tableContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  noteItem: {
-    flexDirection: 'row',
-    backgroundColor: '#2a2a2a',
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 16,
-    minHeight: 72,
-  },
-  noteIcon: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#3a3a3a',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  noteContent: {
-    flex: 1,
-  },
-  noteTitle: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    marginBottom: 6,
-    fontFamily: 'Montserrat-SemiBold',
-  },
-  noteDate: {
-    color: '#888',
-    fontSize: 12,
-    fontFamily: 'Montserrat-Regular',
-  },
-  activeTabIndicator: {
+  trashBadge: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: '#FFFFFF',
-  },
-  notePreview: {
-    color: '#ccc',
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: 'Montserrat-Regular',
-  },
-  viewContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  viewText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontFamily: 'Montserrat-Bold',
-    marginBottom: 6,
-    marginTop: 20,
-  },
-  viewSubtext: {
-    color: '#888',
-    fontSize: 14,
-    fontFamily: 'Montserrat-Regular',
-    marginBottom: 20,
-  },
-  calendarPreview: {
-    alignItems: 'center',
-    padding: 40,
-  },
-  openCalendarButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2a2a2a',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    gap: 8,
-    minHeight: 48,
-  },
-  openCalendarText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontFamily: 'Montserrat-SemiBold',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-start',
-  },
-  menuContainer: {
-    backgroundColor: '#1a1a1a',
-    width: '75%',
-    height: '100%',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 60,
-    paddingHorizontal: 20,
-  },
-  menuHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 30,
-    paddingBottom: 20,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#333',
-    minHeight: 48,
-  },
-  menuTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontFamily: 'Montserrat-Bold',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 4,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#333',
-    minHeight: 64,
-  },
-  menuIconContainer: {
-    width: 44,
-    height: 44,
+    top: 5,
+    right: 5,
+    backgroundColor: theme.colors.danger,
     borderRadius: 10,
-    backgroundColor: '#333',
+    minWidth: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
   },
-  menuItemText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    flex: 1,
-    fontFamily: 'Montserrat-SemiBold',
+  trashBadgeText: {
+    color: theme.colors.white,
+    fontSize: theme.typography.fontSize.xs,
+    fontFamily: theme.typography.fontFamily.bold,
   },
 });
-
-export default NotesScreen;

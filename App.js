@@ -4,16 +4,48 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
-import { Montserrat_400Regular, Montserrat_500Medium, Montserrat_600SemiBold, Montserrat_700Bold, Montserrat_900Black } from '@expo-google-fonts/montserrat';
+import {
+  Montserrat_400Regular,
+  Montserrat_500Medium,
+  Montserrat_600SemiBold,
+  Montserrat_700Bold,
+} from '@expo-google-fonts/montserrat';
+import { PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
 
-// Import the main tabs component
-import MainTabs from './src/MainTabs';
+import { ThemeProvider } from './src/theme/ThemeContext';
+import MainTabs from './src/navigation/MainTabs';
 
-// Import individual screens that are accessed via navigation
+// Screens
 import SearchScreen from './src/screens/SearchScreen';
 import ImportExportScreen from './src/screens/ImportExportScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import ThemeScreen from './src/screens/ThemeScreen';
+import DisplayScreen from './src/screens/DisplayScreen';
+import FontSizeScreen from './src/screens/FontSizeScreen';
 
 const Stack = createNativeStackNavigator();
+
+function AppNavigator() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName="Main"
+        screenOptions={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      >
+        <Stack.Screen name="Main" component={MainTabs} />
+        <Stack.Screen name="Search" component={SearchScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Theme" component={ThemeScreen} />
+        <Stack.Screen name="FontSize" component={FontSizeScreen} />
+        <Stack.Screen name="Display" component={DisplayScreen} />
+        <Stack.Screen name="ImportExport" component={ImportExportScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -23,49 +55,21 @@ export default function App() {
     'Montserrat-Medium': Montserrat_500Medium,
     'Montserrat-SemiBold': Montserrat_600SemiBold,
     'Montserrat-Bold': Montserrat_700Bold,
-    'Montserrat-Black': Montserrat_900Black,
+    PressStart2P_400Regular,
   });
 
   if (!fontsLoaded) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#ffffff" />
+        <ActivityIndicator size="large" color="#FFFFFF" />
       </View>
     );
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="Main"
-        screenOptions={{
-          headerStyle: { backgroundColor: '#121212' },
-          headerTintColor: '#fff',
-          headerTitleStyle: { fontFamily: 'Inter_700Bold' },
-          headerTitleAlign: 'center',
-          headerShown: true, // Show headers for stack screens
-        }}
-      >
-        {/* Main tab navigator as the initial screen */}
-        <Stack.Screen 
-          name="Main" 
-          component={MainTabs} 
-          options={{ headerShown: false }} // Hide header for main tabs
-        />
-        
-        {/* Individual screens that can be navigated to */}
-        <Stack.Screen 
-          name="Search" 
-          component={SearchScreen}
-          options={{ title: 'Search Notes' }}
-        />
-        <Stack.Screen 
-          name="ImportExport" 
-          component={ImportExportScreen}
-          options={{ title: 'Import & Export' }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ThemeProvider>
+      <AppNavigator />
+    </ThemeProvider>
   );
 }
 
@@ -74,6 +78,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#121212',
+    backgroundColor: '#000000',
   },
 });

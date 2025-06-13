@@ -2,210 +2,149 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Platform,
+  Modal,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Modal from 'react-native-modal';
-import ConfettiCannon from 'react-native-confetti-cannon';
+import { useTheme } from '../theme/ThemeContext';
+import { getGlobalStyles } from '../styles/globalStyles';
+import Header from '../components/Header';
+
+const options = {
+  Import: [
+    {
+      type: 'ImportText',
+      fileType: 'Text Files',
+      label: 'Import from plain text files',
+    },
+    {
+      type: 'ImportMarkdown',
+      fileType: 'Markdown Files',
+      label: 'Import from Markdown file',
+    },
+    {
+      type: 'ImportJSON',
+      fileType: 'JSON Files',
+      label: 'Import from JSON files',
+    },
+    {
+      type: 'ImportCSV',
+      fileType: 'CSV Files',
+      label: 'Import from CSV files',
+    },
+  ],
+  Export: [
+    {
+      type: 'ExportText',
+      fileType: 'Text Files',
+      label: 'Export as plain text files',
+    },
+    {
+      type: 'ExportMarkdown',
+      fileType: 'Markdown Files',
+      label: 'Export as Markdown files',
+    },
+    {
+      type: 'ExportJSON',
+      fileType: 'JSON Files',
+      label: 'Export as JSON files',
+    },
+    {
+      type: 'ExportCSV',
+      fileType: 'CSV Files',
+      label: 'Export as CSV files',
+    },
+  ],
+};
 
 export default function ImportExportScreen({ navigation }) {
+  const { theme } = useTheme();
+  const styles = getGlobalStyles(theme);
   const [selectedOption, setSelectedOption] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-
-  const handleSelection = (type) => {
-    setSelectedOption(type);
-  };
 
   const handleDone = () => {
     if (!selectedOption) return;
     setShowModal(true);
-    setShowConfetti(true);
-
-    setTimeout(() => {
-      setShowConfetti(false);
-    }, 3000); // Stop confetti after 3s
-
     setTimeout(() => {
       setShowModal(false);
       setSelectedOption(null);
-    }, 2000); // Close modal after 2s
+    }, 2000);
   };
 
-  const renderOption = (fileType, label, type) => (
-    <TouchableOpacity
-      style={[styles.optionRow, selectedOption === type && styles.selectedOption]}
-      onPress={() => handleSelection(type)}
-    >
-      <MaterialCommunityIcons name="file-document-outline" size={32} color="white" />
-      <View style={styles.optionTextContainer}>
-        <Text style={styles.fileTypeLabel}>{fileType}</Text>
-        <Text style={styles.optionTitle}>{label}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const renderOption = (item) => {
+    const isSelected = selectedOption === item.type;
+    return (
+      <TouchableOpacity
+        key={item.type}
+        style={[
+          styles.card,
+          { flexDirection: 'row', alignItems: 'center' },
+          isSelected && {
+            borderColor: theme.colors.primary,
+            borderWidth: 2,
+          },
+        ]}
+        onPress={() => setSelectedOption(item.type)}
+      >
+        <MaterialCommunityIcons
+          name="file-document-outline"
+          size={32}
+          color={theme.colors.text}
+        />
+        <View style={{ marginLeft: theme.spacing.md }}>
+          <Text style={styles.cardTitle}>{item.fileType}</Text>
+          <Text style={styles.cardContent}>{item.label}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <View style={styles.container}>
-      {/* Top NavBar */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Import & Export</Text>
-        <View style={{ width: 24 }} />
-      </View>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <Header title="Import & Export" navigation={navigation} />
 
-      <ScrollView>
-        <View style={styles.section}>
-          <Text style={styles.sectionCategoryTitle}>Import</Text>
-          {renderOption('Text Files', 'Import from plain text files', 'ImportText')}
-          {renderOption('Markdown Files', 'Import from Markdown file', 'ImportMarkdown')}
-          {renderOption('JSON Files', 'Import from JSON files', 'ImportJSON')}
-          {renderOption('CSV Files', 'Import from CSV files', 'ImportCSV')}
-        </View>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: theme.spacing.md }}
+      >
+        <Text style={styles.sectionTitle}>Import</Text>
+        {options.Import.map(renderOption)}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionCategoryTitle}>Export</Text>
-          {renderOption('Text Files', 'Export as plain text files', 'ExportText')}
-          {renderOption('Markdown Files', 'Export as Markdown files', 'ExportMarkdown')}
-          {renderOption('JSON Files', 'Export as JSON files', 'ExportJSON')}
-          {renderOption('CSV Files', 'Export as CSV files', 'ExportCSV')}
-        </View>
+        <Text style={styles.sectionTitle}>Export</Text>
+        {options.Export.map(renderOption)}
       </ScrollView>
 
-      {/* Bottom NavBar */}
-      <View style={styles.innerNavbarWrapper}>
+      <View style={{ padding: theme.spacing.md }}>
         <TouchableOpacity
           onPress={handleDone}
           disabled={!selectedOption}
-          style={[styles.doneWrapper, { opacity: selectedOption ? 1 : 0.5 }]}
+          style={[
+            styles.button,
+            !selectedOption && styles.buttonDisabled,
+          ]}
         >
-          <Text style={styles.doneButton}>Done</Text>
+          <Text style={styles.buttonText}>Done</Text>
         </TouchableOpacity>
       </View>
 
-      <Modal isVisible={showModal}>
-  <View style={styles.modalContainer}>
-    {/* Confetti inside modal so it appears on top */}
-    {showConfetti && (
-      <ConfettiCannon
-        count={100}
-        origin={{ x: 200, y: -400 }}
-        fadeOut
-        fallSpeed={2000}
-      />
-    )}
-    <Text style={styles.modalTitle}>Success</Text>
-    <Text style={styles.modalMessage}>
-      {selectedOption?.includes('Import')
-        ? 'Files have been imported'
-        : 'Files have been exported'}
-    </Text>
-  </View>
-</Modal>
-
-
+      <Modal
+        visible={showModal}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Success</Text>
+            <Text style={styles.modalMessage}>
+              {selectedOption?.includes('Import')
+                ? 'Files have been imported'
+                : 'Files have been exported'}
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-    paddingTop: 50,
-    paddingHorizontal: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  headerTitle: {
-    color: 'white',
-    fontSize: 20,
-    fontFamily: 'Inter_700Bold',
-  },
-  section: {
-    marginBottom: 30,
-  },
-  sectionCategoryTitle: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    fontFamily: 'Inter_700Bold',
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    color: '#aaa',
-    marginBottom: 4,
-    marginTop: 12,
-    fontFamily: 'Inter_400Regular',
-  },
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1e1e1e',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  selectedOption: {
-    borderWidth: 2,
-    borderColor: '#3399FF',
-  },
-  optionTextContainer: {
-    marginLeft: 12,
-  },
-  fileTypeLabel: {
-    color: 'white',
-    fontSize: 16,
-    fontFamily: 'Inter_700Bold',
-  },
-  optionTitle: {
-    color: '#aaa',
-    fontSize: 14,
-    fontFamily: 'Inter_400Regular',
-  },
-  innerNavbarWrapper: {
-    backgroundColor: '#121212',
-    paddingBottom: Platform.OS === 'android' ? 75 : 80,
-    paddingTop: 30,
-  },
-  doneWrapper: {
-    backgroundColor: '#3399FF',
-    marginHorizontal: 16,
-    borderRadius: 999,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  doneButton: {
-    color: '#000',
-    fontSize: 14,
-    fontFamily: 'Inter_700Bold',
-  },
-  modalContainer: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontFamily: 'Inter_700Bold',
-    marginBottom: 8,
-  },
-  modalMessage: {
-    color: '#AAAAAA',
-    fontSize: 14,
-    fontFamily: 'Inter_400Regular',
-    textAlign: 'center',
-  },
-});
