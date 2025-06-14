@@ -1,6 +1,3 @@
-// This is a simplified version of GalleryView, refactored to use the centralized theme.
-// It can be a standalone screen or a component within NotesScreen.
-
 import React from 'react';
 import {
   View,
@@ -8,6 +5,7 @@ import {
   FlatList,
   Dimensions,
   TouchableOpacity,
+  StyleSheet,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
@@ -15,14 +13,7 @@ import { getGlobalStyles } from '../styles/globalStyles';
 
 const { width } = Dimensions.get('window');
 
-const galleryNotes = [
-  { id: '1', title: 'Project Kickoff', category: 'Meeting', icon: 'account-group' },
-  { id: '2', title: 'Client Consultation', category: 'Client', icon: 'handshake' },
-  { id: '3', title: 'Design System Review', category: 'Design', icon: 'palette' },
-  { id: '4', title: 'Dev Sprint Planning', category: 'Development', icon: 'code-braces' },
-];
-
-const GalleryCard = ({ item, styles, theme }) => {
+const GalleryCard = ({ item, styles, theme, onOpenNote }) => {
   const cardWidth = (width - theme.spacing.md * 3) / 2;
 
   return (
@@ -34,56 +25,65 @@ const GalleryCard = ({ item, styles, theme }) => {
           margin: theme.spacing.md / 2,
         },
       ]}
+      onPress={() => onOpenNote(item)}
     >
-      <View style={[styles.centered, { marginBottom: theme.spacing.md }]}>
-        <View
-          style={[
-            styles.centered,
-            {
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: theme.colors.surface2,
-            },
-          ]}
-        >
-          <MaterialCommunityIcons
-            name={item.icon}
-            size={24}
-            color={theme.colors.text}
-          />
-        </View>
+      <View style={[styles.centered, { marginBottom: theme.spacing.sm }]}>
+        <MaterialCommunityIcons
+          name="note-text-outline"
+          size={32}
+          color={theme.colors.textSecondary}
+        />
       </View>
-      <Text
-        style={[styles.cardTitle, { textAlign: 'center' }]}
-        numberOfLines={2}
-      >
+      <Text style={[styles.cardTitle, { textAlign: 'center' }]} numberOfLines={2}>
         {item.title}
       </Text>
-      <Text style={[styles.textSecondary, { textAlign: 'center' }]}>
-        {item.category}
+      <Text
+        style={[
+          styles.textMuted,
+          { textAlign: 'center', marginTop: 4 },
+        ]}
+      >
+        {new Date(item.createdAt).toLocaleDateString()}
       </Text>
     </TouchableOpacity>
   );
 };
 
-const GalleryView = () => {
-  const { theme } = useTheme();
-  const styles = getGlobalStyles(theme);
+const GalleryView = ({ notes, onOpenNote }) => {
+  const { theme, displaySettings } = useTheme();
+  const styles = getGlobalStyles(theme, displaySettings);
+
+  if (notes.length === 0) {
+    return (
+      <View style={styles.emptyStateContainer}>
+        <MaterialCommunityIcons
+          name="image-multiple-outline"
+          size={48}
+          color={theme.colors.textMuted}
+        />
+        <Text style={styles.emptyStateText}>No Notes for Gallery</Text>
+        <Text style={styles.emptyStateSubtext}>
+          Create a note to see it here.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <FlatList
-      data={galleryNotes}
+      data={notes}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
-        <GalleryCard item={item} styles={styles} theme={theme} />
+        <GalleryCard
+          item={item}
+          styles={styles}
+          theme={theme}
+          onOpenNote={onOpenNote}
+        />
       )}
       numColumns={2}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{
-        alignItems: 'center',
-        padding: theme.spacing.md / 2,
-      }}
+      contentContainerStyle={{ alignItems: 'center' }}
     />
   );
 };

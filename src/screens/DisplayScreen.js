@@ -1,17 +1,40 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Switch } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Alert
+} from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { getGlobalStyles } from '../styles/globalStyles';
 import Header from '../components/Header';
 import ListItem from '../components/ListItem';
 
 export default function DisplayScreen({ navigation }) {
-  const { theme } = useTheme();
-  const styles = getGlobalStyles(theme);
+  const {
+    theme,
+    displaySettings,
+    updateDisplaySettings,
+    resetDisplaySettings
+  } = useTheme();
 
-  const [showDividers, setShowDividers] = useState(true);
-  const [roundedCorners, setRoundedCorners] = useState(true);
-  const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const styles = getGlobalStyles(theme, displaySettings);
+
+  const handleReset = () => {
+    Alert.alert(
+      'Reset Settings',
+      'Are you sure you want to reset display settings to default?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => resetDisplaySettings(),
+        },
+      ]
+    );
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -20,40 +43,53 @@ export default function DisplayScreen({ navigation }) {
       <ScrollView
         style={styles.flex1}
         contentContainerStyle={{ padding: theme.spacing.md }}
-        showsVerticalScrollIndicator={false}
       >
         <Text style={styles.sectionTitle}>Visual Options</Text>
 
         <ListItem
-          label="Show Dividers"
-          subtitle="Display lines between list items"
-          icon="remove"
-          type="toggle"
-          value={showDividers}
-          onValueChange={setShowDividers}
-        />
-
-        <ListItem
           label="Rounded Corners"
           subtitle="Use rounded corners for cards"
-          icon="square"
           type="toggle"
-          value={roundedCorners}
-          onValueChange={setRoundedCorners}
+          value={displaySettings.roundedCorners}
+          onValueChange={(value) =>
+            updateDisplaySettings({ roundedCorners: value })
+          }
         />
 
         <ListItem
-          label="Animations"
-          subtitle="Enable smooth transitions"
-          icon="play"
+          label="Show Dividers"
+          subtitle="Display lines between list items"
           type="toggle"
-          value={animationsEnabled}
-          onValueChange={setAnimationsEnabled}
+          value={displaySettings.showDividers}
+          onValueChange={(value) =>
+            updateDisplaySettings({ showDividers: value })
+          }
         />
 
-        <View style={styles.section}>
-          <TouchableOpacity style={[styles.button, { backgroundColor: theme.colors.danger }]}>
-            <Text style={styles.buttonText}>Reset to Defaults</Text>
+        <Text style={styles.sectionTitle}>Default View</Text>
+
+        <ListItem
+          label="List View"
+          type="value"
+          value={displaySettings.defaultView === 'List' ? 'Active' : ''}
+          onPress={() => updateDisplaySettings({ defaultView: 'List' })}
+        />
+
+        <ListItem
+          label="Gallery View"
+          type="value"
+          value={displaySettings.defaultView === 'Gallery' ? 'Active' : ''}
+          onPress={() => updateDisplaySettings({ defaultView: 'Gallery' })}
+        />
+
+        <View style={{ marginTop: theme.spacing.xl }}>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: theme.colors.danger }]}
+            onPress={handleReset}
+          >
+            <Text style={[styles.buttonText, { color: theme.colors.white }]}>
+              Reset to Defaults
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

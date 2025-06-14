@@ -13,8 +13,8 @@ const ListItem = ({
   value, // for toggle or value
   onValueChange // for toggle
 }) => {
-  const { theme } = useTheme();
-  const styles = getGlobalStyles(theme);
+  const { theme, displaySettings } = useTheme();
+  const styles = getGlobalStyles(theme, displaySettings);
 
   const renderRightContent = () => {
     switch (type) {
@@ -23,22 +23,22 @@ const ListItem = ({
           <Switch
             value={value}
             onValueChange={onValueChange}
-            trackColor={{
-              false: theme.colors.surface3,
-              true: theme.colors.primary,
-            }}
-            thumbColor={value ? theme.colors.white : theme.colors.textMuted}
+            trackColor={{ false: theme.colors.surface3, true: theme.colors.primary }}
+            thumbColor={theme.colors.white}
+            ios_backgroundColor={theme.colors.surface3}
           />
         );
       case 'value':
         return (
           <View style={styles.listItemValueContainer}>
             <Text style={styles.listItemValueText}>{value}</Text>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={theme.colors.textMuted}
-            />
+            {onPress && (
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={theme.colors.textMuted}
+              />
+            )}
           </View>
         );
       case 'navigation':
@@ -69,9 +69,13 @@ const ListItem = ({
             style={styles.listItemIcon}
           />
         )}
-        <View>
+        <View style={styles.flex1}>
           <Text style={styles.listItemLabel}>{label}</Text>
-          {subtitle && <Text style={styles.textSecondary}>{subtitle}</Text>}
+          {subtitle && (
+            <Text style={[styles.textSecondary, { marginTop: 2 }]}>
+              {subtitle}
+            </Text>
+          )}
         </View>
       </View>
       {renderRightContent()}

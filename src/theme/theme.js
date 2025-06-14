@@ -1,4 +1,4 @@
-import { Appearance } from 'react-native';
+import { Appearance, Platform } from 'react-native';
 
 const typography = {
   fontFamily: {
@@ -6,9 +6,7 @@ const typography = {
     medium: 'Montserrat-Medium',
     semiBold: 'Montserrat-SemiBold',
     bold: 'Montserrat-Bold',
-    logo: 'PressStart2P_400Regular',
-    interRegular: 'Inter_400Regular',
-    interBold: 'Inter_700Bold',
+    special: 'Montserrat-Italic', // Mapped from Montserrat_400Regular_Italic
   },
   fontSize: {
     xs: 12,
@@ -30,30 +28,38 @@ const spacing = {
   xl: 32,
 };
 
-const shared = {
-  primary: '#007AFF',
-  success: '#34C759',
-  danger: '#FF3B30',
-  warning: '#FF9500',
+const baseColors = {
+  blue: '#0A84FF',
+  green: '#30D158',
+  red: '#FF453A',
+  orange: '#FF9F0A',
+  purple: '#BF5AF2',
+  teal: '#64D2FF',
+  yellow: '#FFD60A',
+};
+
+// All dark themes inherit from this base to ensure text colors are set
+const darkThemeBase = {
+  text: '#FFFFFF',
+  textSecondary: '#EBEBF599',
+  textMuted: '#EBEBF54D',
+  white: '#FFFFFF',
+  black: '#000000',
 };
 
 const darkTheme = {
   key: 'dark',
   colors: {
-    background: '#000000',
-    surface: '#111111',
-    surface2: '#1C1C1E',
-    surface3: '#2C2C2E',
-    border: '#2A2A2A',
-    text: '#FFFFFF',
-    textSecondary: '#888888',
-    textMuted: '#666666',
-    primary: shared.primary,
-    success: shared.success,
-    danger: shared.danger,
-    warning: shared.warning,
-    white: '#FFFFFF',
-    black: '#000000',
+    ...darkThemeBase,
+    background: '#1C1C1E',
+    surface: '#2C2C2E',
+    surface2: '#3A3A3C',
+    surface3: '#58585A',
+    border: '#38383A',
+    primary: baseColors.blue,
+    success: baseColors.green,
+    danger: baseColors.red,
+    warning: baseColors.orange,
     transparent: 'transparent',
   },
   typography,
@@ -67,14 +73,14 @@ const lightTheme = {
     surface: '#FFFFFF',
     surface2: '#F9F9F9',
     surface3: '#EFEFF4',
-    border: '#E0E0E0',
+    border: '#C6C6C8',
     text: '#000000',
-    textSecondary: '#6E6E73',
-    textMuted: '#8E8E93',
-    primary: shared.primary,
-    success: shared.success,
-    danger: shared.danger,
-    warning: shared.warning,
+    textSecondary: '#3C3C4399',
+    textMuted: '#3C3C434D',
+    primary: baseColors.blue,
+    success: baseColors.green,
+    danger: baseColors.red,
+    warning: baseColors.orange,
     white: '#FFFFFF',
     black: '#000000',
     transparent: 'transparent',
@@ -83,48 +89,55 @@ const lightTheme = {
   spacing,
 };
 
-const otherThemes = {
-  amoled: {
-    ...darkTheme,
-    key: 'amoled',
-    colors: {
-      ...darkTheme.colors,
-      surface: '#000000',
-      surface2: '#000000',
-      border: '#111111',
-    },
+const amoledTheme = {
+  ...darkTheme,
+  key: 'amoled',
+  colors: {
+    ...darkTheme.colors,
+    background: '#000000',
+    surface: '#121212',
+    surface2: '#1C1C1E',
+    border: '#2A2A2A',
   },
-  midnight: {
-    ...darkTheme,
-    key: 'midnight',
-    colors: {
-      ...darkTheme.colors,
-      background: '#0D1117',
-      surface: '#161B22',
-      surface2: '#21262d',
-      border: '#30363d',
-      text: '#F0F6FC',
-      primary: '#0A84FF',
-    },
+};
+
+const midnightTheme = {
+  ...darkTheme,
+  key: 'midnight',
+  colors: {
+    ...darkTheme.colors,
+    background: '#0D1117',
+    surface: '#161B22',
+    surface2: '#21262d',
+    border: '#30363d',
+    text: '#E0E0FB',
+    textSecondary: '#A0A0EB',
+    primary: baseColors.teal,
   },
-  purple: {
-    ...darkTheme,
-    key: 'purple',
-    colors: {
-      ...darkTheme.colors,
-      background: '#0F0A1A',
-      surface: '#1A1425',
-      surface2: '#2A2435',
-      border: '#3A3445',
-      primary: '#A855F7',
-    },
+};
+
+const purpleTheme = {
+  ...darkTheme,
+  key: 'purple',
+  colors: {
+    ...darkTheme.colors,
+    background: '#1D1A2F',
+    surface: '#2C2A44',
+    surface2: '#3C3A59',
+    border: '#4D4B6F',
+    text: '#EAEAFB',
+    primary: baseColors.purple,
+    success: '#61E8A3',
+    danger: '#FF6B6B',
   },
 };
 
 export const themes = {
-  dark: darkTheme,
   light: lightTheme,
-  ...otherThemes,
+  dark: darkTheme,
+  amoled: amoledTheme,
+  midnight: midnightTheme,
+  purple: purpleTheme,
 };
 
 export const getSystemTheme = () => {

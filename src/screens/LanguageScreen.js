@@ -1,90 +1,84 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../theme/ThemeContext';
 import { getGlobalStyles } from '../styles/globalStyles';
 import Header from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
 
-const LANGUAGES = [
-  'English',
-  'Español',
-  'Français',
-  'Deutsch',
-  'Italiano',
-  'Português',
-  'Русский',
-  '日本語',
-  '中文',
-  '한국어',
-  'हिन्दी',
-];
+const LANGUAGE_KEY = 'app_language';
+const LANGUAGES = ['English', 'Español', 'Français', 'Deutsch', '日本語', '中文', 'हिन्दी'];
 
 export default function LanguageScreen({ navigation }) {
-  const { theme } = useTheme();
-  const styles = getGlobalStyles(theme);
+  const { theme, displaySettings } = useTheme();
+  const styles = getGlobalStyles(theme, displaySettings);
 
-  const [originalLanguage] = useState('English');
+  const [originalLanguage, setOriginalLanguage] = useState('English');
   const [selectedLanguage, setSelectedLanguage] = useState('English');
-  const [isModified, setIsModified] = useState(false);
 
+  // Load saved language on mount
   useEffect(() => {
-    setIsModified(selectedLanguage !== originalLanguage);
+    const loadLanguage = async () => {
+      try {
+        const savedLang = (await AsyncStorage.getItem(LANGUAGE_KEY)) || 'English';
+        setOriginalLanguage(savedLang);
+        setSelectedLanguage(savedLang);
+      } catch (error) {
+        console.error('Error loading language:', error);
+      }
+    };
+    loadLanguage();
+  }, []);
+
+  // Save selected language and notify user
+  const handleSave = useCallback(async () => {
+    if (selectedLanguage === originalLanguage) return;
+
+    try {
+      await AsyncStorage.setItem(LANGUAGE_KEY, selectedLanguage);
+      Alert.alert(
+        'Language Saved',
+        `App language set to ${selectedLanguage}.\n(Restart required for full effect)`,
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save language setting.');
+    }
   }, [selectedLanguage, originalLanguage]);
 
-  const handleSave = () => {
-    if (!isModified) return;
-    // Logic to save the language preference
-    console.log('Selected App Language:', selectedLanguage);
-    navigation.goBack();
-  };
-
-  const LanguageItem = ({ item }) => {
-    const isSelected = selectedLanguage === item;
-    return (
-      <TouchableOpacity
-        style={[
-          localStyles.languageItem,
-          { backgroundColor: theme.colors.surface2 },
-          isSelected && { borderColor: theme.colors.primary },
-        ]}
-        onPress={() => setSelectedLanguage(item)}
-      >
-        <Text style={[styles.text, { flex: 1 }]}>{item}</Text>
-        {isSelected && (
-          <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} />
-        )}
-      </TouchableOpacity>
-    );
-  };
-
+  // UI
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <Header
         title="Language"
         navigation={navigation}
         rightAction={handleSave}
-        rightActionText={isModified ? 'Save' : ''}
+        rightActionText="Save"
       />
+
       <FlatList
         data={LANGUAGES}
         keyExtractor={(item) => item}
-        renderItem={({ item }) => <LanguageItem item={item} />}
         contentContainerStyle={{ padding: theme.spacing.md }}
         showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[
+              styles.listItem,
+              selectedLanguage === item && {
+                borderColor: theme.colors.primary,
+                borderWidth: 2,
+              },
+            ]}
+            onPress={() => setSelectedLanguage(item)}
+          >
+            <Text style={styles.listItemLabel}>{item}</Text>
+            {selectedLanguage === item && (
+              <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} />
+            )}
+          </TouchableOpacity>
+        )}
       />
     </View>
   );
 }
-
-const localStyles = StyleSheet.create({
-  languageItem: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-});

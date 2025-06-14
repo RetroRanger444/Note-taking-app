@@ -1,5 +1,5 @@
 // services/syncService.js - Enhanced version with all database functions
-import { supabase } from './src/services/supabase';
+import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export class SyncService {
