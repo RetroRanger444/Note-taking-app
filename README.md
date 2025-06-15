@@ -107,6 +107,14 @@ This is an open source project and contributions are welcome! Whether you want t
 - Make your changes
 - Submit a pull request
 
+## Credits
+
+**Developers:**
+- retroranger444
+- darkpigeon554
+
+Built collaboratively with passion for productivity and clean code.
+
 ## License
 
 MIT License - Feel free to use, modify, and distribute this project.
