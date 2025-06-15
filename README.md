@@ -109,9 +109,9 @@ This is an open source project and contributions are welcome! Whether you want t
 
 ## Credits
 
-**Developers:**
-- retroranger444
-- darkpigeon554
+**Contributors:**
+- [@retroranger444](https://github.com/retroranger444)
+- [@darkpigeon554](https://github.com/darkpigeon554)
 
 Built collaboratively with passion for productivity and clean code.
 
