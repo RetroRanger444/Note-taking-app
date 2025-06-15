@@ -14,21 +14,19 @@ import {
   Montserrat_400Regular_Italic,
 } from '@expo-google-fonts/montserrat';
 
+import {PressStart2P_400Regular} from '@expo-google-fonts/press-start-2p';
+
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import MainTabs from './src/navigation/MainTabs';
-
-// Import all screens
 import ThemeScreen from './src/screens/ThemeScreen';
 import DisplayScreen from './src/screens/DisplayScreen';
 import FontSizeScreen from './src/screens/FontSizeScreen';
-import StorageScreen from './src/screens/StorageScreen';
-import PerformanceScreen from './src/screens/PerformanceScreen';
 import LanguageScreen from './src/screens/LanguageScreen';
-import ImportExportScreen from './src/screens/ImportExportScreen';
 import TrashScreen from './src/screens/TrashScreen';
 import LockScreen from './src/screens/LockScreen';
+import NotesScreen from './src/screens/NotesScreen';
+import TasksScreen from './src/screens/TasksScreen';
 
-// Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 const Stack = createStackNavigator();
@@ -58,10 +56,9 @@ function AppNavigator() {
         <Stack.Screen name="Theme" component={ThemeScreen} />
         <Stack.Screen name="FontSize" component={FontSizeScreen} />
         <Stack.Screen name="Display" component={DisplayScreen} />
-        <Stack.Screen name="Storage" component={StorageScreen} />
-        <Stack.Screen name="Performance" component={PerformanceScreen} />
         <Stack.Screen name="Language" component={LanguageScreen} />
-        <Stack.Screen name="ImportExport" component={ImportExportScreen} />
+        <Stack.Screen name="TasksScreen" component={TasksScreen} />
+        <Stack.Screen name="NotesScreen" component={NotesScreen} />
         <Stack.Screen
           name="TrashScreen"
           component={TrashScreen}
@@ -132,14 +129,13 @@ export default function App() {
     'Montserrat-SemiBold': Montserrat_600SemiBold,
     'Montserrat-Bold': Montserrat_700Bold,
     'Montserrat-Italic': Montserrat_400Regular_Italic,
+    'PressStart': PressStart2P_400Regular
   });
 
   const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
     async function prepare() {
-        
-        // Wait for fonts to load
         if (fontsLoaded || fontsError) {
           setAppIsReady(true);
         }

@@ -2,13 +2,15 @@ import React, {
   createContext,
   useState,
   useEffect,
-  useContext
+  useContext,
+  useMemo,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { themes, getSystemTheme } from './theme';
 
 const THEME_STORAGE_KEY = 'app_theme_v2';
 const DISPLAY_SETTINGS_KEY = 'display_settings_v2';
+// REMOVED: const FONT_MULTIPLIER_KEY = 'font_multiplier_v2';
 
 export const ThemeContext = createContext();
 
@@ -16,11 +18,11 @@ const defaultDisplaySettings = {
   roundedCorners: true,
   showDividers: true,
   animationsEnabled: true,
-  defaultView: 'List', // 'List' or 'Gallery'
+  defaultView: 'Notes', // 'Notes', 'Calendar', or 'Gallery'
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(themes.dark); // Default to pixel theme
+  const [theme, setTheme] = useState(themes.dark); // Simplified to just 'theme'
   const [displaySettings, setDisplaySettings] = useState(defaultDisplaySettings);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -29,6 +31,7 @@ export const ThemeProvider = ({ children }) => {
       try {
         const storedThemeKey = await AsyncStorage.getItem(THEME_STORAGE_KEY);
         const storedDisplaySettings = await AsyncStorage.getItem(DISPLAY_SETTINGS_KEY);
+        // REMOVED: No longer loading font multiplier
 
         if (storedThemeKey && themes[storedThemeKey]) {
           setTheme(themes[storedThemeKey]);
@@ -41,6 +44,7 @@ export const ThemeProvider = ({ children }) => {
         } else {
           setDisplaySettings(defaultDisplaySettings);
         }
+        // REMOVED: Logic to set font multiplier
       } catch (e) {
         console.error('Failed to load settings.', e);
         setTheme(getSystemTheme());
@@ -52,7 +56,9 @@ export const ThemeProvider = ({ children }) => {
 
     loadSettings();
   }, []);
-
+  
+  // REMOVED: useMemo is no longer needed as theme is directly managed by state
+  
   const changeTheme = async (themeKey) => {
     if (themes[themeKey]) {
       try {
@@ -63,6 +69,8 @@ export const ThemeProvider = ({ children }) => {
       }
     }
   };
+  
+  // REMOVED: updateFontMultiplier function
 
   const updateDisplaySettings = async (newSettings) => {
     const updatedSettings = { ...displaySettings, ...newSettings };
@@ -101,6 +109,7 @@ export const ThemeProvider = ({ children }) => {
         changeTheme,
         updateDisplaySettings,
         resetDisplaySettings,
+        // REMOVED: updateFontMultiplier
       }}
     >
       {children}

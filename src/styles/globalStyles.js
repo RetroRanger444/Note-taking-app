@@ -3,8 +3,7 @@ import { StyleSheet, Platform, StatusBar } from 'react-native';
 export const getGlobalStyles = (theme, displaySettings = {}) => {
   const { colors, spacing, typography } = theme;
   const { roundedCorners = true, showDividers = true } = displaySettings;
-  // Font size multiplier from theme context (we will add this later)
-  const fontMultiplier = theme.fontMultiplier || 1.0;
+  // REMOVED: const fontMultiplier = theme.fontMultiplier || 1.0;
 
   const borderRadius = roundedCorners ? 12 : 4;
 
@@ -19,7 +18,7 @@ export const getGlobalStyles = (theme, displaySettings = {}) => {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: spacing.sm, // Reduced for bigger tap targets
+      paddingHorizontal: spacing.sm,
       paddingVertical: spacing.sm,
       minHeight: 50,
       marginTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
@@ -28,43 +27,48 @@ export const getGlobalStyles = (theme, displaySettings = {}) => {
     },
     headerTitle: {
       color: colors.text,
-      fontSize: typography.fontSize.xl * fontMultiplier,
+      fontSize: typography.fontSize.xl, // No more multiplier
       fontFamily: typography.fontFamily.bold,
+    },
+    pixelTitle: {
+      color: colors.text,
+      fontSize: typography.fontSize.xl, // No more multiplier
+      fontFamily: 'PressStart',
     },
     headerActionText: {
       color: colors.primary,
-      fontSize: typography.fontSize.md * fontMultiplier,
+      fontSize: typography.fontSize.md, // No more multiplier
       fontFamily: typography.fontFamily.semiBold,
     },
 
     // Typography
     text: {
       color: colors.text,
-      fontSize: typography.fontSize.md * fontMultiplier,
+      fontSize: typography.fontSize.md, // No more multiplier
       fontFamily: typography.fontFamily.regular,
     },
     textSecondary: {
       color: colors.textSecondary,
-      fontSize: typography.fontSize.sm * fontMultiplier,
+      fontSize: typography.fontSize.sm, // No more multiplier
       fontFamily: typography.fontFamily.regular,
     },
     textMuted: {
       color: colors.textMuted,
-      fontSize: typography.fontSize.xs * fontMultiplier,
+      fontSize: typography.fontSize.xs, // No more multiplier
       fontFamily: typography.fontFamily.regular,
     },
     sectionTitle: {
       color: colors.textSecondary,
-      fontSize: typography.fontSize.sm * fontMultiplier,
+      fontSize: typography.fontSize.sm, // No more multiplier
       fontFamily: typography.fontFamily.semiBold,
       marginTop: spacing.lg,
       marginBottom: spacing.sm,
       paddingHorizontal: spacing.md,
       textTransform: 'uppercase',
     },
-    sectionDescription: { // For ThemeScreen
+    sectionDescription: {
       color: colors.textSecondary,
-      fontSize: typography.fontSize.md * fontMultiplier,
+      fontSize: typography.fontSize.md, // No more multiplier
       fontFamily: typography.fontFamily.regular,
       textAlign: 'center',
       marginBottom: spacing.lg,
@@ -80,11 +84,11 @@ export const getGlobalStyles = (theme, displaySettings = {}) => {
     },
     buttonText: {
       color: colors.white,
-      fontSize: typography.fontSize.md * fontMultiplier,
+      fontSize: typography.fontSize.md, // No more multiplier
       fontFamily: typography.fontFamily.bold,
     },
     buttonDisabled: { opacity: 0.5 },
-    iconButton: { padding: spacing.sm }, // Consistent padding
+    iconButton: { padding: spacing.sm },
 
     // Cards & List Items
     card: {
@@ -97,15 +101,15 @@ export const getGlobalStyles = (theme, displaySettings = {}) => {
     },
     cardTitle: {
         color: colors.text,
-        fontSize: typography.fontSize.lg * fontMultiplier,
+        fontSize: typography.fontSize.lg, // No more multiplier
         fontFamily: typography.fontFamily.bold,
         marginBottom: spacing.xs,
     },
     cardContent: {
         color: colors.textSecondary,
-        fontSize: typography.fontSize.sm * fontMultiplier,
+        fontSize: typography.fontSize.sm, // No more multiplier
         fontFamily: typography.fontFamily.regular,
-        lineHeight: 20 * fontMultiplier,
+        lineHeight: 20, // No more multiplier
     },
     listItem: {
       flexDirection: 'row',
@@ -118,7 +122,7 @@ export const getGlobalStyles = (theme, displaySettings = {}) => {
     },
     listItemLabel: {
       color: colors.text,
-      fontSize: typography.fontSize.md * fontMultiplier,
+      fontSize: typography.fontSize.md, // No more multiplier
       fontFamily: typography.fontFamily.regular,
     },
     listItemIcon: {
@@ -130,7 +134,7 @@ export const getGlobalStyles = (theme, displaySettings = {}) => {
     listItemValueContainer: { flexDirection: 'row', alignItems: 'center' },
     listItemValueText: {
       color: colors.textSecondary,
-      fontSize: typography.fontSize.md * fontMultiplier,
+      fontSize: typography.fontSize.md, // No more multiplier
       marginRight: spacing.sm,
     },
 
@@ -150,15 +154,15 @@ export const getGlobalStyles = (theme, displaySettings = {}) => {
     },
     modalTitle: {
       color: colors.text,
-      fontSize: typography.fontSize.xl * fontMultiplier,
+      fontSize: typography.fontSize.xl, // No more multiplier
       fontFamily: typography.fontFamily.bold,
       marginBottom: spacing.sm,
     },
     modalMessage: {
       color: colors.textSecondary,
-      fontSize: typography.fontSize.md * fontMultiplier,
+      fontSize: typography.fontSize.md, // No more multiplier
       textAlign: 'center',
-      lineHeight: 22 * fontMultiplier,
+      lineHeight: 22, // No more multiplier
       marginBottom: spacing.lg,
     },
     
@@ -172,15 +176,16 @@ export const getGlobalStyles = (theme, displaySettings = {}) => {
     },
     emptyStateText: {
       color: colors.text,
-      fontSize: typography.fontSize.xl * fontMultiplier,
+      fontSize: typography.fontSize.xl, // No more multiplier
       fontFamily: typography.fontFamily.bold,
       marginTop: spacing.md,
       textAlign: 'center',
     },
     emptyStateSubtext: {
       color: colors.textSecondary,
-      fontSize: typography.fontSize.md * fontMultiplier,
+      fontSize: typography.fontSize.md, // No more multiplier
       textAlign: 'center',
+      fontFamily: typography.fontFamily.regular,
       marginTop: spacing.sm,
       paddingHorizontal: spacing.md,
     },

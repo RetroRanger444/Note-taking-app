@@ -69,7 +69,10 @@ const SearchScreen = ({ navigation }) => {
   const renderItem = ({ item }) => {
     if (item.type === 'note') {
       return (
-        <TouchableOpacity style={styles.card}>
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => navigation.navigate('NoteEditor', { noteId: item.id })}
+        >
           <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 4}}>
              <MaterialCommunityIcons name="note-text-outline" size={18} color={theme.colors.primary} style={{marginRight: 8}}/>
              <Text style={styles.cardTitle}>{item.title}</Text>
@@ -82,22 +85,27 @@ const SearchScreen = ({ navigation }) => {
     }
     if (item.type === 'task') {
         return (
-          <View style={[styles.card, {flexDirection: 'row', alignItems: 'center'}]}>
-            <Ionicons
-              name={item.completed ? 'checkmark-circle' : 'ellipse-outline'}
-              size={24}
-              color={item.completed ? theme.colors.success : theme.colors.textSecondary}
-              style={{marginRight: theme.spacing.md}}
-            />
-            <Text
-              style={[
-                styles.listItemLabel,
-                { opacity: item.completed ? 0.5 : 1, textDecorationLine: item.completed ? 'line-through' : 'none' },
-              ]}
-            >
-              {item.title}
-            </Text>
-          </View>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Tasks', { focusedTaskId: item.id })}
+          >
+            <View style={[styles.card, {flexDirection: 'row', alignItems: 'center'}]}>
+              <Ionicons
+                name={item.completed ? 'checkmark-circle' : 'ellipse-outline'}
+                size={24}
+                color={item.completed ? theme.colors.success : theme.colors.textSecondary}
+                style={{marginRight: theme.spacing.md}}
+              />
+              <Text
+                style={[
+                  styles.listItemLabel,
+                  { opacity: item.completed ? 0.5 : 1, textDecorationLine: item.completed ? 'line-through' : 'none' },
+                ]}
+              >
+                {item.title}
+              </Text>
+            </View>
+          </TouchableOpacity>
         )
     }
     return null;
@@ -117,18 +125,26 @@ const SearchScreen = ({ navigation }) => {
           onChangeText={setSearchQuery}
           autoFocus
         />
+        {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={22} color={theme.colors.textMuted} />
+            </TouchableOpacity>
+        )}
       </View>
 
       <FlatList
         data={searchResults}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => `${item.type}-${item.id}`}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: theme.spacing.md }}
+        contentContainerStyle={{ paddingHorizontal: theme.spacing.md, paddingBottom: 20 }}
         ListEmptyComponent={() => (
           <View style={styles.emptyStateContainer}>
             <Ionicons name="search-outline" size={48} color={theme.colors.textMuted} />
             <Text style={styles.emptyStateText}>
-              {searchQuery.length > 1 ? 'No Results Found' : 'Search Your Notes & Tasks'}
+              {searchQuery.length > 1 ? 'No Results Found' : 'Search Ur Notes & Tasks'}
+            </Text>
+            <Text style={styles.emptyStateSubtext}>
+              {searchQuery.length <= 1 ? 'Enter at least 2 chars to begin.' : ''}
             </Text>
           </View>
         )}
@@ -154,7 +170,7 @@ const localStyles = (theme) =>
     searchInput: {
       flex: 1,
       color: theme.colors.text,
-      fontSize: theme.typography.fontSize.md,
+      fontSize: 16,
       fontFamily: theme.typography.fontFamily.regular,
       height: '100%',
     },

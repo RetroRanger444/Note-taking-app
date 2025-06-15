@@ -1,9 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { getGlobalStyles } from '../styles/globalStyles';
-import Markdown from 'react-native-markdown-display';
 
 // Helper to create a date object in the local timezone
 const createLocalDate = (y, m, d) => new Date(y, m, d);
@@ -27,6 +26,7 @@ const CalendarView = ({ notes, tasks = [], onDateSelect, onOpenNote }) => {
 
   const dataByDate = useMemo(() => {
     const map = {};
+    // Process notes by createdAt
     notes.forEach(note => {
       const noteDate = new Date(note.createdAt);
       const dateStr = createLocalDate(noteDate.getFullYear(), noteDate.getMonth(), noteDate.getDate()).toISOString().split('T')[0];
@@ -34,11 +34,15 @@ const CalendarView = ({ notes, tasks = [], onDateSelect, onOpenNote }) => {
       map[dateStr].notes.push(note);
     });
 
+    // --- UPGRADE: Process tasks by dueDate ---
     tasks.forEach(task => {
-      const taskDate = new Date(task.createdAt);
-      const dateStr = createLocalDate(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate()).toISOString().split('T')[0];
-      if (!map[dateStr]) map[dateStr] = { notes: [], tasks: [] };
-      map[dateStr].tasks.push(task);
+        if (task.dueDate) { // Only map tasks that have a due date
+            // The dueDate string is 'YYYY-MM-DD'. Create a Date object from it correctly.
+            const dueDate = new Date(task.dueDate + 'T00:00:00'); 
+            const dateStr = createLocalDate(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()).toISOString().split('T')[0];
+            if (!map[dateStr]) map[dateStr] = { notes: [], tasks: [] };
+            map[dateStr].tasks.push(task);
+        }
     });
 
     return map;
@@ -67,44 +71,39 @@ const CalendarView = ({ notes, tasks = [], onDateSelect, onOpenNote }) => {
     const todayStr = createLocalDate(today.getFullYear(), today.getMonth(), today.getDate()).toISOString().split('T')[0];
   
     let days = [];
-    // Add empty cells for days before the 1st of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
       days.push(<View key={`empty-${i}`} style={localStyles.dayContainer} />);
     }
   
-    // Add day cells
     for (let i = 1; i <= daysInMonth; i++) {
       const date = createLocalDate(year, month, i);
       const dateStr = date.toISOString().split('T')[0];
       const isToday = todayStr === dateStr;
       const isSelected = selectedDate && selectedDate.toISOString().split('T')[0] === dateStr;
       const dayData = dataByDate[dateStr];
-      const hasNotes = dayData && dayData.notes.length > 0;
-      const hasTasks = dayData && dayData.tasks.length > 0;
+      const hasContent = dayData && (dayData.notes.length > 0 || dayData.tasks.length > 0);
   
       days.push(
         <TouchableOpacity
           key={`day-${i}`}
           style={localStyles.dayContainer}
           onPress={() => handleDatePress(date)}
+          activeOpacity={0.7}
         >
+          {/* --- UPGRADE: Day cell styling logic --- */}
           <View style={[
             localStyles.dayWrapper,
-            isToday && localStyles.todayWrapper,
+            hasContent && !isSelected && localStyles.hasContentWrapper, // Highlight for content
+            isToday && !isSelected && localStyles.todayWrapper ,
             isSelected && localStyles.selectedWrapper
           ]}>
             <Text style={[
               styles.text, localStyles.dayText,
-              isToday && localStyles.todayText,
-              isSelected && localStyles.selectedText
+              isToday && !isSelected && localStyles.todayText,
+              isSelected && localStyles.selectedText,
             ]}>
               {i}
             </Text>
-          </View>
-          
-          <View style={localStyles.indicatorContainer}>
-            {hasNotes && <View style={[localStyles.indicator, { backgroundColor: theme.colors.primary }]} />}
-            {hasTasks && <View style={[localStyles.indicator, { backgroundColor: theme.colors.success }]} />}
           </View>
         </TouchableOpacity>
       );
@@ -112,7 +111,6 @@ const CalendarView = ({ notes, tasks = [], onDateSelect, onOpenNote }) => {
   
     return <View style={localStyles.calendarGrid}>{days}</View>;
   };
-  
 
   const renderSelectedDateItems = () => {
     if (!selectedDate) return (
@@ -150,7 +148,7 @@ const CalendarView = ({ notes, tasks = [], onDateSelect, onOpenNote }) => {
             <Text style={localStyles.sectionHeader}>Notes ({dayData.notes.length})</Text>
             {dayData.notes.map((note) => (
               <TouchableOpacity key={note.id} style={localStyles.noteItem} onPress={() => onOpenNote && onOpenNote(note)}>
-                <Text style={localStyles.itemTitle} numberOfLines={1}>{note.title}</Text>
+                <Text style={localStyles.itemTitle} numberOfLines={1}>{note.title || 'Untitled Note'}</Text>
                 <Text style={localStyles.itemContent} numberOfLines={2}>{stripMarkdown(note.content)}</Text>
               </TouchableOpacity>
             ))}
@@ -163,7 +161,7 @@ const CalendarView = ({ notes, tasks = [], onDateSelect, onOpenNote }) => {
             {dayData.tasks.map((task) => (
               <View key={task.id} style={localStyles.taskItem}>
                  <Ionicons name={task.completed ? "checkmark-circle" : "ellipse-outline"} size={20} color={task.completed ? theme.colors.success : theme.colors.textSecondary} />
-                 <Text style={[localStyles.itemTitle, {marginLeft: 8, textDecorationLine: task.completed ? 'line-through' : 'none'}]} numberOfLines={1}>{task.title}</Text>
+                 <Text style={[localStyles.itemTitle, {marginLeft: 8, color: task.completed ? theme.colors.textMuted : theme.colors.text, textDecorationLine: task.completed ? 'line-through' : 'none'}]} numberOfLines={1}>{task.title}</Text>
               </View>
             ))}
           </View>
@@ -189,7 +187,7 @@ const CalendarView = ({ notes, tasks = [], onDateSelect, onOpenNote }) => {
 
         <View style={localStyles.dayHeaders}>
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-            <Text key={index} style={[styles.textMuted, { flex: 1, textAlign: 'center' }]}>{day}</Text>
+            <Text key={index} style={[styles.textMuted, { flex: 1, textAlign: 'center', fontFamily: theme.typography.fontFamily.bold }]}>{day}</Text>
           ))}
         </View>
 
@@ -207,22 +205,38 @@ const createLocalStyles = (theme) =>
     monthTitle: { fontFamily: theme.typography.fontFamily.bold, fontSize: 20, color: theme.colors.text },
     dayHeaders: { flexDirection: 'row', marginBottom: theme.spacing.sm },
     calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-    dayContainer: { width: `${100/7}%`, aspectRatio: 1, justifyContent: 'center', alignItems: 'center', position: 'relative' },
-    dayWrapper: { width: 38, height: 38, justifyContent: 'center', alignItems: 'center', borderRadius: 19 },
-    dayText: { fontSize: 16 },
-    todayWrapper: { borderWidth: 2, borderColor: theme.colors.primary },
-    selectedWrapper: { backgroundColor: theme.colors.primary },
-    todayText: { color: theme.colors.primary, fontFamily: theme.typography.fontFamily.bold },
-    selectedText: { color: theme.colors.white, fontFamily: theme.typography.fontFamily.bold },
-    indicatorContainer: { position: 'absolute', bottom: 5, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-    indicator: { width: 5, height: 5, borderRadius: 2.5, marginHorizontal: 1.5 },
+    dayContainer: { width: `${100/7}%`, aspectRatio: 1, justifyContent: 'center', alignItems: 'center' },
+    dayWrapper: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20, borderWidth: 2, borderColor: 'transparent' },
+    dayText: { fontSize: 16, fontFamily: theme.typography.fontFamily.medium },
+    // --- UPGRADED STYLES ---
+    hasContentWrapper: {
+        backgroundColor: theme.colors.surface,
+    },
+    todayWrapper: { 
+        borderColor: theme.colors.surface2,
+        borderWidth: 2,
+        borderColor: theme.colors.primary,
+    },
+    selectedWrapper: { 
+        backgroundColor: theme.colors.primary,
+        borderWidth: 2,
+        borderColor: theme.colors.primary,
+    },
+    todayText: { 
+        color: theme.colors.primary, 
+        fontFamily: theme.typography.fontFamily.bold 
+    },
+    selectedText: { 
+        color: theme.colors.white, 
+        fontFamily: theme.typography.fontFamily.bold 
+    },
     selectedDateContainer: { marginTop: theme.spacing.lg, padding: theme.spacing.md, backgroundColor: theme.colors.surface, borderRadius: 12 },
     selectedDateContainerEmpty: { ...getGlobalStyles(theme).emptyStateContainer, paddingVertical: 48 },
-    selectedDateTitle: { fontSize: 18, fontFamily: theme.typography.fontFamily.bold, textAlign: 'center', color: theme.colors.text, marginBottom: theme.spacing.md, },
+    selectedDateTitle: { fontSize: 18, fontFamily: theme.typography.fontFamily.bold, textAlign: 'center', color: theme.colors.text, marginBottom: theme.spacing.md },
     sectionHeader: { fontFamily: theme.typography.fontFamily.bold, color: theme.colors.text, marginBottom: theme.spacing.sm, fontSize: 16 },
     noteItem: { padding: theme.spacing.md, backgroundColor: theme.colors.surface2, borderRadius: 8, marginBottom: theme.spacing.sm, borderLeftWidth: 3, borderLeftColor: theme.colors.primary },
     taskItem: { padding: theme.spacing.md, backgroundColor: theme.colors.surface2, borderRadius: 8, marginBottom: theme.spacing.sm, borderLeftWidth: 3, borderLeftColor: theme.colors.success, flexDirection: 'row', alignItems: 'center' },
-    itemTitle: { fontFamily: theme.typography.fontFamily.medium, color: theme.colors.text, fontSize: 16 },
+    itemTitle: { fontFamily: theme.typography.fontFamily.medium, color: theme.colors.text, fontSize: 16, flex: 1 },
     itemContent: { fontFamily: theme.typography.fontFamily.regular, color: theme.colors.textSecondary, marginTop: 4, fontSize: 14 },
   });
 

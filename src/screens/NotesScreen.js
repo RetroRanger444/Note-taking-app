@@ -1,25 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  Modal,
-  Alert,
-  TextInput,
-  StatusBar,
-  StyleSheet,
-  Animated,
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
+  View, Text, TouchableOpacity, FlatList, Modal, Alert, TextInput, StatusBar,
+  StyleSheet, Animated, Dimensions, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIsFocused } from '@react-navigation/native';
-import Markdown from 'react-native-markdown-display';
-
 import { useTheme } from '../theme/ThemeContext';
 import { getGlobalStyles } from '../styles/globalStyles';
 import GalleryView from './GalleryView';
@@ -27,126 +13,187 @@ import CalendarView from './CalendarView';
 
 const NOTES_KEY = 'vellum_notes_v3';
 const TRASH_KEY = 'app_trash_v3';
-
 const { width: screenWidth } = Dimensions.get('window');
 
+// Custom Dialog Component
+const CustomDialog = ({ visible, onClose, title, message, buttons, theme, styles }) => {
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.spring(slideAnim, { toValue: 1, tension: 100, friction: 8, useNativeDriver: true }).start();
+    }
+  }, [visible]);
+
+  const handleClose = () => {
+    Animated.timing(slideAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(onClose);
+  };
+
+  if (!visible) return null;
+
+  return (
+    <Modal transparent visible={visible} animationType="none" onRequestClose={handleClose}>
+      <View style={styles.dialogOverlay}>
+        <Animated.View
+          style={[
+            styles.dialogContainer,
+            {
+              transform: [{ scale: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
+              opacity: slideAnim,
+            },
+          ]}
+        >
+          <View style={styles.dialogHeader}>
+            <Text style={styles.dialogTitle}>{title}</Text>
+          </View>
+          <View style={styles.dialogContent}>
+            <Text style={styles.dialogMessage}>{message}</Text>
+          </View>
+          <View style={styles.dialogButtonContainer}>
+            {buttons?.map((button, index) => (
+              <TouchableOpacity
+                key={`dialog-button-${index}`}
+                style={[
+                  styles.dialogButton,
+                  button.style === 'destructive' && styles.destructiveButton,
+                  button.style === 'cancel' && styles.cancelButton,
+                ]}
+                onPress={() => {
+                  handleClose();
+                  button.onPress?.();
+                }}
+              >
+                <Text
+                  style={[
+                    styles.dialogButtonText,
+                    button.style === 'destructive' && styles.destructiveButtonText,
+                    button.style === 'cancel' && styles.cancelButtonText,
+                  ]}
+                >
+                  {button.text}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
+
+// Note Modal Component (Simplified)
 const NoteModal = ({ visible, onClose, onSave, note, theme, styles }) => {
   const isEditing = !!note;
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [slideAnim] = useState(new Animated.Value(0));
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
   const contentInputRef = useRef(null);
+  const initialState = useRef({ title: '', content: '' });
 
   useEffect(() => {
     if (visible) {
-      setTitle(note?.title || '');
-      setContent(note?.content || '');
-      Animated.spring(slideAnim, {
-        toValue: 1,
-        tension: 60,
-        friction: 10,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      setTitle('');
-      setContent('');
+      const initialTitle = note?.title || '';
+      const initialContent = note?.content || '';
+      
+      setTitle(initialTitle);
+      setContent(initialContent);
+      setHasUnsavedChanges(false);
+      initialState.current = { title: initialTitle, content: initialContent };
+      
+      Animated.spring(slideAnim, { toValue: 1, tension: 60, friction: 10, useNativeDriver: true }).start();
     }
   }, [note, visible]);
 
+  useEffect(() => {
+    if (visible) {
+      const hasChanges = 
+        title.trim() !== initialState.current.title.trim() || 
+        content.trim() !== initialState.current.content.trim();
+      setHasUnsavedChanges(hasChanges);
+    }
+  }, [title, content, visible]);
+
+  const handleClose = () => {
+    Animated.timing(slideAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start(onClose);
+  };
+
   const handleSave = () => {
+    if (!hasUnsavedChanges) {
+      handleClose();
+      return;
+    }
+
     if (!title.trim() && !content.trim()) {
       return Alert.alert('Empty Note', 'Please enter a title or content.');
     }
+    
     onSave({
       id: note?.id,
       title: title.trim() || 'Untitled Note',
       content: content.trim(),
     });
-    onClose();
-  };
-
-  const handleClose = () => {
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      onClose();
-    });
-  };
-
-  const insertMarkdown = (syntax) => {
-    contentInputRef.current?.focus();
-    setContent(prev => `${prev}${syntax}`);
+    handleClose();
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="none"
-      transparent
-      onRequestClose={handleClose}
-    >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <View style={localStyles(theme).modalOverlay}>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={handleClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <View style={styles.modalOverlay}>
           <Animated.View
             style={[
-              localStyles(theme).modalContainer,
-              {
-                transform: [
-                  {
-                    translateY: slideAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [screenWidth, 0],
-                    }),
-                  },
-                ],
-              },
+              styles.modalContainer,
+              { transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [screenWidth, 0] }) }] },
             ]}
           >
-            <View style={localStyles(theme).modalHeader}>
-              <TouchableOpacity onPress={handleClose} style={localStyles(theme).modalHeaderButton}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={handleClose} style={styles.modalHeaderButton}>
                 <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
               </TouchableOpacity>
-              <Text style={localStyles(theme).modalHeaderTitle}>
-                {isEditing ? 'Edit Note' : 'New Note'}
-              </Text>
-              <TouchableOpacity onPress={handleSave} style={[localStyles(theme).modalHeaderButton, localStyles(theme).saveButton]}>
-                <Text style={localStyles(theme).saveButtonText}>Save</Text>
-              </TouchableOpacity>
+              <Text style={styles.modalHeaderTitle}>{isEditing ? 'Edit Note' : 'New Note'}</Text>
+              <View style={styles.modalHeaderActions}>
+                <TouchableOpacity 
+                  onPress={handleSave} 
+                  style={[
+                    styles.modalHeaderButton, 
+                    styles.saveButton,
+                    !hasUnsavedChanges && styles.saveButtonDisabled
+                  ]}
+                  disabled={!hasUnsavedChanges}
+                >
+                  <Text style={[
+                    styles.saveButtonText,
+                    !hasUnsavedChanges && styles.saveButtonTextDisabled
+                  ]}>
+                    Save
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <ScrollView style={localStyles(theme).modalContent} keyboardShouldPersistTaps="handled">
+            <ScrollView style={styles.modalContent} keyboardShouldPersistTaps="handled">
               <TextInput
-                style={localStyles(theme).titleInput}
+                style={styles.titleInput}
                 placeholder="Title..."
                 placeholderTextColor={theme.colors.textMuted}
                 value={title}
                 onChangeText={setTitle}
+                returnKeyType="next"
+                onSubmitEditing={() => contentInputRef.current?.focus()} // Move focus to content
               />
               <TextInput
                 ref={contentInputRef}
-                style={localStyles(theme).contentInput}
+                style={styles.contentInput}
                 placeholder="Start writing..."
                 placeholderTextColor={theme.colors.textMuted}
                 value={content}
                 onChangeText={setContent}
                 multiline
                 textAlignVertical="top"
+                selectionColor={theme.colors.primary}
+                disableFullscreenUI={true}
               />
             </ScrollView>
-
-            <View style={localStyles(theme).toolbar}>
-              <TouchableOpacity onPress={() => insertMarkdown('# ')} style={localStyles(theme).toolbarButton}><MaterialCommunityIcons name="format-header-1" size={22} color={theme.colors.textSecondary} /></TouchableOpacity>
-              <TouchableOpacity onPress={() => insertMarkdown('## ')} style={localStyles(theme).toolbarButton}><MaterialCommunityIcons name="format-header-2" size={22} color={theme.colors.textSecondary} /></TouchableOpacity>
-              <TouchableOpacity onPress={() => insertMarkdown('**bold**')} style={localStyles(theme).toolbarButton}><MaterialCommunityIcons name="format-bold" size={22} color={theme.colors.textSecondary} /></TouchableOpacity>
-              <TouchableOpacity onPress={() => insertMarkdown('_italic_')} style={localStyles(theme).toolbarButton}><MaterialCommunityIcons name="format-italic" size={22} color={theme.colors.textSecondary} /></TouchableOpacity>
-              <TouchableOpacity onPress={() => insertMarkdown('\n- ')} style={localStyles(theme).toolbarButton}><MaterialCommunityIcons name="format-list-bulleted" size={22} color={theme.colors.textSecondary} /></TouchableOpacity>
-              <TouchableOpacity onPress={() => insertMarkdown('\ncode\n```\n')} style={localStyles(theme).toolbarButton}><MaterialCommunityIcons name="xml" size={22} color={theme.colors.textSecondary} /></TouchableOpacity>
-            </View>
           </Animated.View>
         </View>
       </KeyboardAvoidingView>
@@ -154,75 +201,80 @@ const NoteModal = ({ visible, onClose, onSave, note, theme, styles }) => {
   );
 };
 
+// Helper function to extract plain text from content
+const extractPreviewText = (content, maxLength = 100) => {
+  if (!content) return '';
+  // Replace newlines with spaces and trim for a clean, single-line preview
+  const preview = content.replace(/\n+/g, ' ').trim();
+  return preview.length > maxLength ? `${preview.substring(0, maxLength)}...` : preview;
+};
 
-const ViewModeSwitcher = ({ viewMode, setViewMode, theme }) => (
-  <View style={localStyles(theme).tabContainer}>
-    {['Notes', 'Calendar', 'Gallery'].map(mode => (
-      <TouchableOpacity
-        key={mode}
-        onPress={() => setViewMode(mode)}
-        style={[
-          localStyles(theme).tabButton,
-          viewMode === mode && localStyles(theme).tabButtonActive,
-        ]}
-      >
-        <Text
-          style={[
-            localStyles(theme).tabText,
-            viewMode === mode && localStyles(theme).tabTextActive,
-          ]}
-        >
-          {mode}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-);
-
-export default function NotesScreen({ navigation }) {
+export default function NotesScreen({ navigation, route }) {
   const { theme, displaySettings } = useTheme();
-  const styles = getGlobalStyles(theme, displaySettings);
+  const globalStyles = getGlobalStyles(theme, displaySettings);
+  const styles = createStyles(theme);
   const isFocused = useIsFocused();
 
   const [notes, setNotes] = useState([]);
   const [editingNote, setEditingNote] = useState(null);
-  const [showCreateNote, setShowCreateNote] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
   const [viewMode, setViewMode] = useState(displaySettings.defaultView || 'Notes');
+  const [isLoading, setIsLoading] = useState(true);
+  const [dialogConfig, setDialogConfig] = useState({ visible: false, title: '', message: '', buttons: [] });
 
+  // --- START OF REFACTORED LOGIC ---
+
+  // EFFECT 1: Handles setting the view mode based on the default setting.
+  // This runs on mount and whenever the defaultView setting actually changes.
+  // It does NOT run on every focus, preserving the user's tab selection.
+  useEffect(() => {
+    setViewMode(displaySettings.defaultView || 'Notes');
+  }, [displaySettings.defaultView]);
+
+  // EFFECT 2: Handles refreshing data when the screen comes into focus.
   useEffect(() => {
     if (isFocused) {
-      setViewMode(displaySettings.defaultView || 'Notes');
-      loadNotes();
+      loadNotes(); // Always load notes on focus to catch updates
+      const shouldRefresh = route?.params?.refreshNotes;
+      if (shouldRefresh) {
+        // Reset the param after refreshing
+        navigation.setParams({ refreshNotes: false });
+      }
     }
-  }, [isFocused, displaySettings.defaultView]);
+  }, [isFocused, route?.params?.refreshNotes]);
 
+  // --- END OF REFACTORED LOGIC ---
+
+  // Dynamically determine tab order based on default view setting
+  const tabOrder = displaySettings.defaultView === 'Gallery' 
+    ? ['Gallery', 'Calendar', 'Notes'] 
+    : ['Notes', 'Calendar', 'Gallery'];
 
   const loadNotes = async () => {
     try {
+      setIsLoading(true);
       const storedNotes = await AsyncStorage.getItem(NOTES_KEY);
       const parsedNotes = storedNotes ? JSON.parse(storedNotes) : [];
-      parsedNotes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-      setNotes(parsedNotes);
+      setNotes(parsedNotes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)));
     } catch (error) {
       console.error('Error loading notes:', error);
       setNotes([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const saveNote = async (noteData) => {
     try {
-      let newNotes;
       const now = new Date().toISOString();
-      if (noteData.id) {
-        newNotes = notes.map((n) =>
-          n.id === noteData.id
-            ? { ...n, ...noteData, updatedAt: now }
-            : n
-        );
-      } else {
+      let newNotes;
+      
+      if (noteData.id) { // Update existing note
+        newNotes = notes.map(n => n.id === noteData.id ? { ...n, ...noteData, updatedAt: now } : n);
+      } else { // Create new note
         const newNote = {
-          id: Date.now().toString(),
           ...noteData,
+          id: `${Date.now()}${Math.random().toString(36).substr(2, 9)}`,
           createdAt: now,
           updatedAt: now,
         };
@@ -233,122 +285,67 @@ export default function NotesScreen({ navigation }) {
       setNotes(newNotes);
       await AsyncStorage.setItem(NOTES_KEY, JSON.stringify(newNotes));
     } catch (error) {
-      Alert.alert('Error', 'Failed to save note. Please try again.');
+      console.error('Error saving note:', error);
+      setDialogConfig({ visible: true, title: 'Error', message: 'Failed to save note.', buttons: [{ text: 'OK' }] });
     }
   };
 
   const deleteNote = (noteToDelete) => {
-    Alert.alert(
-      'Move to Trash',
-      `Are you sure you want to move "${noteToDelete.title}" to the Trash?`,
-      [
+    setDialogConfig({
+      visible: true,
+      title: 'Move to Trash',
+      message: `Move "${noteToDelete.title}" to Trash?`,
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Move to Trash',
-          style: 'destructive',
+        { text: 'Move to Trash', style: 'destructive',
           onPress: async () => {
             try {
               const newNotes = notes.filter((n) => n.id !== noteToDelete.id);
-
               const storedTrash = await AsyncStorage.getItem(TRASH_KEY);
               const trash = storedTrash ? JSON.parse(storedTrash) : [];
-
-              const trashedNote = {
-                ...noteToDelete,
-                type: 'note',
-                deletedAt: new Date().toISOString(),
-              };
+              const trashedNote = { ...noteToDelete, type: 'note', deletedAt: new Date().toISOString() };
               trash.unshift(trashedNote);
 
-              // Perform storage operations
               await Promise.all([
                 AsyncStorage.setItem(NOTES_KEY, JSON.stringify(newNotes)),
                 AsyncStorage.setItem(TRASH_KEY, JSON.stringify(trash))
               ]);
-              // Update state last to reflect the successful change
               setNotes(newNotes);
-
             } catch (error) {
               console.error('Error deleting note:', error);
-              Alert.alert('Error', 'Failed to move note to trash. Please try again.');
-
-              loadNotes();
-              debugAsyncStorage();
+              setDialogConfig({ visible: true, title: 'Error', message: 'Failed to move note to trash.', buttons: [{ text: 'OK' }] });
             }
           },
         },
       ]
-    );
+    });
   };
-
-  // const debugAsyncStorage = async () => {
-  //   try {
-  //     console.log('=== DEBUG ASYNC STORAGE ===');
-    
-  //     // Check notes
-  //     const notes = await AsyncStorage.getItem('vellum_notes_v3');
-  //     console.log('Notes in storage:', notes ? JSON.parse(notes).length : 0);
-    
-  //     // Check trash
-  //     const trash = await AsyncStorage.getItem('app_trash_v3');
-  //     const trashData = trash ? JSON.parse(trash) : [];
-  //     console.log('Trash in storage:', trashData.length);
-  //     console.log('Trash contents:', trashData);
-    
-  //     // Check for any items without proper structure
-  //     trashData.forEach((item, index) => {
-  //       console.log(`Trash item ${index}:`, {
-  //         hasId: !!item.id,
-  //         hasTitle: !!item.title,
-  //         hasType: !!item.type,
-  //         hasDeletedAt: !!item.deletedAt,
-  //         item: item
-  //       });
-  //     });
-    
-  //     console.log('=== END DEBUG ===');
-  //   }  catch (error) {
-  //     console.error('Debug error:', error);
-  //   }
-  // };
 
   const openNote = (note) => {
     setEditingNote(note);
-    setShowCreateNote(true);
+    setShowNoteModal(true);
   };
-
-  // FIX: Added all heading levels for proper markdown rendering
-  const markdownStyles = StyleSheet.create({
-    heading1: { fontSize: 28, fontFamily: theme.typography.fontFamily.bold, color: theme.colors.text, marginTop: 10, marginBottom: 5, borderBottomWidth: 1, borderColor: theme.colors.border },
-    heading2: { fontSize: 24, fontFamily: theme.typography.fontFamily.bold, color: theme.colors.text, marginTop: 8, marginBottom: 4 },
-    heading3: { fontSize: 20, fontFamily: theme.typography.fontFamily.semiBold, color: theme.colors.text, marginTop: 6, marginBottom: 3 },
-    heading4: { fontSize: 18, fontFamily: theme.typography.fontFamily.semiBold, color: theme.colors.text, marginTop: 4, marginBottom: 2 },
-    heading5: { fontSize: 16, fontFamily: theme.typography.fontFamily.medium, color: theme.colors.text },
-    heading6: { fontSize: 14, fontFamily: theme.typography.fontFamily.medium, color: theme.colors.textSecondary },
-    body: { fontSize: 16, color: theme.colors.text, lineHeight: 24 },
-    code_inline: { backgroundColor: theme.colors.surface2, color: theme.colors.primary, padding: 2, borderRadius: 4, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
-    code_block: { backgroundColor: theme.colors.surface2, color: theme.colors.text, padding: 10, borderRadius: 8, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
-    bullet_list: { marginBottom: 10 },
-    list_item: { flexDirection: 'row', alignItems: 'flex-start', marginVertical: 4 },
-    bullet_list_icon: { color: theme.colors.primary, marginRight: 8, marginTop: 6, fontSize: 16 },
-  });
-
-
+  
+  const handleOpenCreateNote = () => {
+    setEditingNote(null);
+    setShowNoteModal(true);
+  };
+  
+  const handleCloseNoteModal = () => {
+    setShowNoteModal(false);
+    setEditingNote(null);
+  };
+  
   const renderContent = () => {
-    if (viewMode === 'Gallery') {
-      return <GalleryView notes={notes} onOpenNote={openNote} />;
-    }
-
-    if (viewMode === 'Calendar') {
-      return <CalendarView notes={notes} onOpenNote={openNote} />;
-    }
-
-    if (notes.length === 0 && viewMode === 'Notes') {
+    if (isLoading) return <View style={globalStyles.emptyStateContainer}><Text style={globalStyles.emptyStateText}>Loading...</Text></View>;
+    if (viewMode === 'Gallery') return <GalleryView notes={notes} onOpenNote={openNote} />;
+    if (viewMode === 'Calendar') return <CalendarView notes={notes} onOpenNote={openNote} />;
+    if (notes.length === 0) {
       return (
-        <View style={styles.emptyStateContainer}>
+        <View style={globalStyles.emptyStateContainer}>
           <MaterialCommunityIcons name="note-multiple-outline" size={60} color={theme.colors.textMuted} />
-          <Text style={styles.emptyStateText}>No Notes Yet</Text>
-          <Text style={styles.emptyStateSubtext}>Tap the + button to create your first note.</Text>
+          <Text style={globalStyles.emptyStateText}>No Notes Yet</Text>
+          <Text style={globalStyles.emptyStateSubtext}>Tap the '+' button [top right] to create ur first note.</Text>
         </View>
       );
     }
@@ -358,22 +355,10 @@ export default function NotesScreen({ navigation }) {
         data={notes}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            activeOpacity={0.7}
-            onPress={() => openNote(item)}
-            onLongPress={() => deleteNote(item)}
-          >
-            <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-            <Text style={[styles.textMuted, { marginVertical: 4 }]}>
-              {new Date(item.updatedAt).toLocaleDateString()}
-            </Text>
-            {/* Use Markdown component to render content previews */}
-            <View style={{ maxHeight: 80, overflow: 'hidden' }}>
-              <Markdown style={markdownStyles}>
-                {item.content}
-              </Markdown>
-            </View>
+          <TouchableOpacity style={globalStyles.card} activeOpacity={0.7} onPress={() => openNote(item)} onLongPress={() => deleteNote(item)}>
+            <Text style={globalStyles.cardTitle} numberOfLines={1}>{item.title}</Text>
+            <Text style={styles.cardDate}>{new Date(item.updatedAt).toLocaleDateString()}</Text>
+            <Text style={styles.cardPreview} numberOfLines={3}>{extractPreviewText(item.content)}</Text>
           </TouchableOpacity>
         )}
         contentContainerStyle={{ padding: theme.spacing.md, paddingBottom: 100 }}
@@ -382,33 +367,44 @@ export default function NotesScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={globalStyles.container}>
       <StatusBar barStyle={theme.key === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('TrashScreen')} style={styles.iconButton}>
+      <View style={globalStyles.header}>
+        <TouchableOpacity onPress={() => navigation.navigate('TrashScreen')} style={globalStyles.iconButton}>
           <Ionicons name="trash-outline" size={24} color={theme.colors.textSecondary} />
         </TouchableOpacity>
-        <Text style={{ ...styles.headerTitle, fontSize: 22 }}>VELLUM</Text>
-        <TouchableOpacity
-          onPress={() => {
-            setEditingNote(null);
-            setShowCreateNote(true);
-          }}
-          style={styles.iconButton}
-        >
-          <Ionicons name="add" size={32} color={theme.colors.text} />
+        <Text style={styles.headerTitle}>VELLUM</Text>
+        <TouchableOpacity onPress={handleOpenCreateNote} style={globalStyles.iconButton}>
+          <Ionicons name="add" size={32} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
 
-      <ViewModeSwitcher viewMode={viewMode} setViewMode={setViewMode} theme={theme} />
+      <View style={styles.tabContainer}>
+        {tabOrder.map(mode => (
+          <TouchableOpacity
+            key={mode}
+            onPress={() => setViewMode(mode)}
+            style={[styles.tabButton, viewMode === mode && styles.tabButtonActive]}
+          >
+            <Text style={[styles.tabText, viewMode === mode && styles.tabTextActive]}>{mode}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {renderContent()}
 
       <NoteModal
-        visible={showCreateNote}
-        onClose={() => { setShowCreateNote(false); setEditingNote(null); }}
+        visible={showNoteModal}
+        onClose={handleCloseNoteModal}
         onSave={saveNote}
         note={editingNote}
+        theme={theme}
+        styles={styles}
+      />
+      <CustomDialog
+        visible={dialogConfig.visible}
+        onClose={() => setDialogConfig(prev => ({ ...prev, visible: false }))}
+        {...dialogConfig}
         theme={theme}
         styles={styles}
       />
@@ -416,96 +412,61 @@ export default function NotesScreen({ navigation }) {
   );
 }
 
-const localStyles = (theme) =>
-  StyleSheet.create({
-    tabContainer: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: theme.spacing.lg,
-      marginVertical: theme.spacing.sm,
-      gap: theme.spacing.md,
-    },
-    tabButton: {
-      paddingVertical: theme.spacing.sm,
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: 20,
-      backgroundColor: 'transparent',
-    },
-    tabButtonActive: {
-      backgroundColor: theme.colors.primary,
-    },
-    tabText: {
-      fontSize: theme.typography.fontSize.md,
-      fontFamily: theme.typography.fontFamily.medium,
-      color: theme.colors.textSecondary,
-    },
-    tabTextActive: {
-      color: theme.colors.white,
-      fontFamily: theme.typography.fontFamily.bold,
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
-      justifyContent: 'flex-end',
-    },
-    modalContainer: {
-      backgroundColor: theme.colors.surface,
-      borderTopLeftRadius: 24,
-      borderTopRightRadius: 24,
-      height: '95%',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -10 },
-      shadowOpacity: 0.1,
-      shadowRadius: 10,
-    },
-    modalHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: theme.spacing.md,
-      paddingVertical: theme.spacing.sm,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.colors.border,
-    },
-    modalHeaderButton: { padding: theme.spacing.sm },
-    modalHeaderTitle: {
-      fontSize: theme.typography.fontSize.lg,
-      fontFamily: theme.typography.fontFamily.bold,
-      color: theme.colors.text,
-    },
-    saveButton: { backgroundColor: theme.colors.primary, borderRadius: 8, paddingHorizontal: 12 },
-    saveButtonText: { color: theme.colors.white, fontFamily: theme.typography.fontFamily.bold, fontSize: 16 },
-    modalContent: {
-      flex: 1,
-    },
-    titleInput: {
-      paddingHorizontal: theme.spacing.lg,
-      paddingTop: theme.spacing.lg,
-      fontSize: theme.typography.fontSize.h2,
-      fontFamily: theme.typography.fontFamily.bold,
-      color: theme.colors.text,
-    },
-    contentInput: {
-      flex: 1,
-      paddingHorizontal: theme.spacing.lg,
-      paddingBottom: theme.spacing.lg,
-      fontSize: 17,
-      fontFamily: theme.typography.fontFamily.regular,
-      color: theme.colors.text,
-      lineHeight: 26,
-      textAlignVertical: 'top',
-    },
-    toolbar: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      paddingVertical: theme.spacing.sm,
-      backgroundColor: theme.colors.surface2,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderColor: theme.colors.border,
-    },
-    toolbarButton: {
-      padding: theme.spacing.sm,
-    }
-  });
+// Unified Stylesheet
+const createStyles = (theme) => StyleSheet.create({
+  headerTitle: { fontFamily: 'PressStart', fontSize: 18, marginTop: 10, color: theme.colors.primary },
+  cardDate: { marginVertical: 4, fontFamily: 'Montserrat-Regular', color: theme.colors.textMuted },
+  cardPreview: { fontFamily: 'Montserrat-Regular', lineHeight: 20, fontSize: 14, color: theme.colors.textSecondary },
+  // Tab/ViewMode styles
+  tabContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: theme.spacing.lg, marginVertical: theme.spacing.sm, gap: theme.spacing.md },
+  tabButton: { paddingVertical: theme.spacing.sm, paddingHorizontal: theme.spacing.md, borderRadius: 20, backgroundColor: 'transparent' },
+  tabButtonActive: { backgroundColor: theme.colors.primary },
+  tabText: { fontSize: theme.typography.fontSize.md, fontFamily: 'Montserrat-Medium', color: theme.colors.textSecondary },
+  tabTextActive: { color: theme.colors.white, fontFamily: 'Montserrat-Bold' },
+  // Dialog styles
+  dialogOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: theme.spacing.lg },
+  dialogContainer: { backgroundColor: theme.colors.surface, borderRadius: 16, width: '100%', maxWidth: 400, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
+  dialogHeader: { padding: theme.spacing.lg, paddingBottom: theme.spacing.md },
+  dialogTitle: { fontSize: theme.typography.fontSize.lg, fontFamily: 'Montserrat-Bold', color: theme.colors.text, textAlign: 'center' },
+  dialogContent: { paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.lg },
+  dialogMessage: { fontSize: theme.typography.fontSize.md, fontFamily: 'Montserrat-Regular', color: theme.colors.textSecondary, textAlign: 'center', lineHeight: 22 },
+  dialogButtonContainer: { flexDirection: 'row', justifyContent: 'flex-end', padding: theme.spacing.lg, paddingTop: 0, gap: theme.spacing.sm },
+  dialogButton: { paddingVertical: theme.spacing.sm, paddingHorizontal: theme.spacing.lg, borderRadius: 8, backgroundColor: theme.colors.primary, minWidth: 80 },
+  cancelButton: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.border },
+  destructiveButton: { backgroundColor: theme.colors.error || '#FF3B30' },
+  dialogButtonText: { fontSize: theme.typography.fontSize.md, fontFamily: 'Montserrat-SemiBold', color: theme.colors.white, textAlign: 'center' },
+  cancelButtonText: { color: theme.colors.textSecondary },
+  destructiveButtonText: { color: theme.colors.white },
+  // NoteModal styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalContainer: { backgroundColor: theme.colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, height: '95%', shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.1, shadowRadius: 10 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.border },
+  modalHeaderButton: { padding: theme.spacing.sm },
+  modalHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  modalHeaderTitle: { fontSize: theme.typography.fontSize.lg, fontFamily: 'Montserrat-Bold', color: theme.colors.text },
+  saveButton: { backgroundColor: theme.colors.primary, borderRadius: 8, paddingHorizontal: 12 },
+  saveButtonDisabled: { backgroundColor: theme.colors.textMuted, opacity: 0.5 },
+  saveButtonText: { color: theme.colors.white, fontFamily: 'Montserrat-Bold', fontSize: 16 },
+  saveButtonTextDisabled: { color: theme.colors.textSecondary },
+  modalContent: { flex: 1 },
+  titleInput: { 
+    paddingHorizontal: theme.spacing.lg, 
+    paddingTop: theme.spacing.lg, 
+    paddingBottom: theme.spacing.sm,
+    fontSize: theme.typography.fontSize.h2, 
+    fontFamily: 'Montserrat-Bold', 
+    color: theme.colors.text 
+  },
+  contentInput: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.lg,
+    fontSize: 17,
+    fontFamily: 'Montserrat-Regular',
+    color: theme.colors.text,
+    lineHeight: 26,
+    minHeight: 250, // Give it a decent minimum height
+    textAlignVertical: 'top',
+  },
+});

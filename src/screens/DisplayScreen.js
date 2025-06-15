@@ -69,10 +69,10 @@ export default function DisplayScreen({ navigation }) {
         <Text style={styles.sectionTitle}>Default View</Text>
 
         <ListItem
-          label="List View"
+          label="Notes View"
           type="value"
-          value={displaySettings.defaultView === 'List' ? 'Active' : ''}
-          onPress={() => updateDisplaySettings({ defaultView: 'List' })}
+          value={displaySettings.defaultView === 'Notes' ? 'Active' : ''}
+          onPress={() => updateDisplaySettings({ defaultView: 'Notes' })}
         />
 
         <ListItem

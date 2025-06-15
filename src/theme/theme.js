@@ -7,6 +7,7 @@ const typography = {
     semiBold: 'Montserrat-SemiBold',
     bold: 'Montserrat-Bold',
     special: 'Montserrat-Italic', // Mapped from Montserrat_400Regular_Italic
+    pixel: 'PressStart'
   },
   fontSize: {
     xs: 12,

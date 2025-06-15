@@ -104,7 +104,7 @@ export default function ThemeScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.sectionDescription}>
-          Choose a theme that matches your style. Changes are applied instantly.
+          Choose a theme that matches ur style.
         </Text>
         {themeOptions.map(renderThemeOption)}
       </ScrollView>
