@@ -1,126 +1,121 @@
 # Vellum
 
-<div align="center">
-
-```
-██╗   ██╗███████╗██╗     ██╗     ██╗   ██║███╗   ███╗
-██║   ██║██╔════╝██║     ██║     ██║   ██║████╗ ████║
-██║   ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║
-╚██╗ ██╔╝██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║
- ╚████╔╝ ███████╗███████╗███████╗╚██████╔╝██║ ╚═╝ ██║
-  ╚═══╝  ╚══════╝╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝
-```
-
-</div>
-
-A comprehensive productivity app that combines note-taking, task management, and calendar integration in one seamless experience.
+Vellum is a clean, privacy-first productivity app for Android, designed to help users manage notes, tasks, and schedules seamlessly—all while staying entirely offline.
 
 ## Features
 
-**Core Functionality**
-- Create and manage notes with rich text editing
-- Gamified task management system to boost productivity
-- Integrated calendar view showing all notes and tasks
-- Multiple theme options for personalized experience
-- Local data storage with seamless performance
-
-**Current Capabilities**
-- Note creation and organization
-- Task creation with gamification elements
-- Calendar integration displaying notes and tasks by date
-- Theme customization
-- Fast, offline-first experience
+### Core Functionality
+- Launches directly into the Notes screen for instant access
+- Create, delete, and recover notes using a built-in Recycle Bin
+- Multiple viewing modes: Calendar View, Notes View, and Gallery View
+- Manage tasks with deadlines (due within 24 hours), track progress, and level up as you complete them
+- Powerful in-app search across notes and tasks
+- Personalize your experience with a wide range of themes and display styles
+- Enable or disable app notifications based on your preference
+- Add an extra layer of security using optional biometric authentication
+- All content is stored locally—no cloud storage, no data tracking
+- Enhanced privacy model with planned support for optional on-device encryption
 
 ## Platform Support
 
-**Currently Available**
-- Android (APK build ready)
+### Available Now
+- Android (via standalone APK)
 
-**Planned Releases**
+### Coming Soon
 - iOS version
-- Enhanced cross-platform features
+- Extended support for tablets, foldables, and desktop environments
 
 ## Technology Stack
 
 - **Framework:** React Native
 - **Development Platform:** Expo Go
-- **Target Platform:** Android (currently)
-- **Build Status:** APK available, requires enhancements
+- **UI Design:** Tailored theme system and Montserrat font integration
+- **Target Platform:** Android (initial phase)
 
 ## Development Status
 
-This application is actively under development. The core features are functional but the app requires additional polish and feature enhancements before wider release.
+Vellum is fully operational on Android and under active development. Core functionality is complete and we are focused on polishing the user experience and expanding device support.
 
-**Current State**
-- Core functionality fully implemented
-- Android APK built and tested
-- All features accessible and functional
-- Calendar integration working
-- Theme system operational
-
-**Next Steps**
-- UI/UX improvements
-- Performance optimization
-- Cross-platform development
-- Community feedback integration
+### Current Highlights
+- Core features (Notes, Tasks, Views, Calendar) are fully functional
+- Customization system with theme switching and display preferences
+- Task leveling system and biometric authentication are live
+- Offline-first with persistent local storage
 
 ## Getting Started
 
-**For Developers**
-1. Clone the repository
-2. Install dependencies with `npm install` or `yarn install`
-3. Run with Expo Go using `expo start`
-4. Test on Android device or emulator
+### For Developers
 
-**For Users**
-- Android APK is available for testing
-- Install and provide feedback for improvements
+To contribute or run the app locally:
+
+1. Clone the repository
+2. Install dependencies using your preferred package manager:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+3. Install required fonts (Montserrat):
+   ```bash
+   npx expo install expo-font @expo-google-fonts/montserrat
+   ```
+4. Start the development server:
+   ```bash
+   npx expo start
+   ```
+5. Open the app on an Android device using Expo Go
+
+> Vellum is optimized for Android. Cross-platform support is coming soon.
+
+### For Testers & Users
+
+- Install the latest APK build on your Android device
+- Use the app and share feedback with the developers
+- Help shape the roadmap by reporting bugs or suggesting features
 
 ## Roadmap
 
-**Phase 1: Current Features**
-- Note-taking functionality
-- Task management with gamification
-- Calendar integration
-- Theme customization
+### Phase 1 – Foundation (Completed)
+- Core notes and task systems
+- Recycle bin and in-app search
+- Calendar view and theme customization
+- Basic biometric authentication
+- Local-only offline storage
 
-**Phase 2: Enhancement**
-- Improved user interface
-- Better performance
-- Bug fixes and stability improvements
-- Enhanced gamification features
+### Phase 2 – Refinement (In Progress)
+- Improved animations and transitions
+- Enhanced user interface and accessibility
+- Extended theme library and layout flexibility
+- App performance and memory optimization
+- Fine-grained notification controls
 
-**Phase 3: Advanced Features**
-- Cloud sync and backup options
-- Cross-platform release
-- Advanced organization tools
-- Search and filtering capabilities
-- Export and sharing features
+### Phase 3 – Expansion (Upcoming)
+- Cloud sync (optional, encrypted)
+- Cross-platform builds (iOS, web, tablets)
+- Secure export/import capabilities
+- Scheduled tasks and recurring reminders
+- Custom templates for notes and tasks
 
 ## Contributing
 
-This is an open source project and contributions are welcome! Whether you want to fix bugs, improve features, or suggest enhancements, your input helps make Vellum better for everyone.
+We welcome developers, designers, and testers to contribute to Vellum.
 
-**How to contribute:**
-- Fork the repository
-- Create a feature branch
-- Make your changes
-- Submit a pull request
+### How to Contribute
+- Fork the repository and clone it locally
+- Create a feature branch with a descriptive name
+- Implement your changes with care and consistency
+- Submit a pull request for review
+
+Whether you're fixing a bug or proposing a new feature, your input matters.
 
 ## Credits
 
-**Contributors:**
+### Contributors
 - [@retroranger444](https://github.com/retroranger444)
 - [@darkpigeon554](https://github.com/darkpigeon554)
 
-Built collaboratively with passion for productivity and clean code.
-
-## License
-
-MIT License - Feel free to use, modify, and distribute this project.
+Built with focus, care, and a passion for privacy-first design.
 
 ---
 
-**Vellum** - Where productivity meets simplicity.
-
-Built with React Native and Expo for modern mobile productivity.
+**Vellum** – Modern note-taking. Thoughtfully offline.
