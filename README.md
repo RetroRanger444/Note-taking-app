@@ -1,6 +1,6 @@
 # Vellum
 
-A clean, privacy-first productivity app that helps you manage notes, tasks, and schedules seamlessly—all while staying completely offline.
+Productivity app that helps you manage notes, tasks, and provides a calender, while staying completely offline.
 
 ## Features
 
