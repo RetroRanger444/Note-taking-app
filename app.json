@@ -23,7 +23,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1C1C1E"
       },
-      "package": "com.demoproject.Note App",
+      "package": "com.demoproject.noteapp",
       "backgroundColor": "#1C1C1E"
     },
     "web": {
