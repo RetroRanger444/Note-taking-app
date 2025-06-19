@@ -1,120 +1,102 @@
-import React, {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-  useMemo,
-} from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { themes, getSystemTheme } from './theme';
 
-const THEME_STORAGE_KEY = 'app_theme_v2';
-const DISPLAY_SETTINGS_KEY = 'display_settings_v2';
-// REMOVED: const FONT_MULTIPLIER_KEY = 'font_multiplier_v2';
-
 export const ThemeContext = createContext();
+
+// keys for persistent storage
+const THEME_KEY = 'user_theme_choice';
+const DISPLAY_SETTINGS_KEY = 'user_display_settings';
 
 const defaultDisplaySettings = {
   roundedCorners: true,
-  showDividers: true,
-  animationsEnabled: true,
-  defaultView: 'Notes', // 'Notes', 'Calendar', or 'Gallery'
+  showDividers: false,
+  defaultView: 'Notes',
 };
 
+// theme provider -> manages global theme state and persistence
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(themes.dark); // Simplified to just 'theme'
+  const [currentTheme, setCurrentTheme] = useState(themes.dark);
   const [displaySettings, setDisplaySettings] = useState(defaultDisplaySettings);
   const [isLoading, setIsLoading] = useState(true);
 
+  // load saved settings on app start
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const storedThemeKey = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-        const storedDisplaySettings = await AsyncStorage.getItem(DISPLAY_SETTINGS_KEY);
-        // REMOVED: No longer loading font multiplier
-
-        if (storedThemeKey && themes[storedThemeKey]) {
-          setTheme(themes[storedThemeKey]);
+        const savedThemeKey = await AsyncStorage.getItem(THEME_KEY);
+        if (savedThemeKey && themes[savedThemeKey]) {
+          setCurrentTheme(themes[savedThemeKey]);
         } else {
-          setTheme(getSystemTheme());
+          setCurrentTheme(getSystemTheme());
         }
-
-        if (storedDisplaySettings) {
-          setDisplaySettings(JSON.parse(storedDisplaySettings));
-        } else {
-          setDisplaySettings(defaultDisplaySettings);
-        }
-        // REMOVED: Logic to set font multiplier
-      } catch (e) {
-        console.error('Failed to load settings.', e);
-        setTheme(getSystemTheme());
-        setDisplaySettings(defaultDisplaySettings);
-      } finally {
-        setIsLoading(false);
+      } catch (error) {
+        console.log('Failed to load theme:', error);
+        setCurrentTheme(getSystemTheme());
       }
+      
+      try {
+        const savedSettings = await AsyncStorage.getItem(DISPLAY_SETTINGS_KEY);
+        if (savedSettings) {
+          setDisplaySettings(JSON.parse(savedSettings));
+        }
+      } catch (error) {
+        console.log('Failed to load display settings:', error);
+        setDisplaySettings(defaultDisplaySettings);
+      }
+      
+      setIsLoading(false);
     };
 
     loadSettings();
   }, []);
-  
-  // REMOVED: useMemo is no longer needed as theme is directly managed by state
-  
-  const changeTheme = async (themeKey) => {
-    if (themes[themeKey]) {
+
+  const setThemePreference = async (themeKey) => {
+    const newTheme = themes[themeKey];
+    if (newTheme) {
+      setCurrentTheme(newTheme);
       try {
-        await AsyncStorage.setItem(THEME_STORAGE_KEY, themeKey);
-        setTheme(themes[themeKey]);
-      } catch (e) {
-        console.error('Failed to save theme.', e);
+        await AsyncStorage.setItem(THEME_KEY, themeKey);
+      } catch (error) {
+        // console.log('Failed to save theme preference:', error); // debugs storage issues
       }
     }
   };
-  
-  // REMOVED: updateFontMultiplier function
 
   const updateDisplaySettings = async (newSettings) => {
     const updatedSettings = { ...displaySettings, ...newSettings };
+    setDisplaySettings(updatedSettings);
     try {
-      await AsyncStorage.setItem(
-        DISPLAY_SETTINGS_KEY,
-        JSON.stringify(updatedSettings)
-      );
-      setDisplaySettings(updatedSettings);
-    } catch (e) {
-      console.error('Failed to save display settings', e);
+      await AsyncStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify(updatedSettings));
+    } catch (error) {
+      // console.log('Failed to save display settings:', error); // debugs storage issues
     }
   };
 
   const resetDisplaySettings = async () => {
+    setDisplaySettings(defaultDisplaySettings);
     try {
-      await AsyncStorage.setItem(
-        DISPLAY_SETTINGS_KEY,
-        JSON.stringify(defaultDisplaySettings)
-      );
-      setDisplaySettings(defaultDisplaySettings);
-    } catch (e) {
-      console.error('Failed to reset display settings', e);
+      await AsyncStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify(defaultDisplaySettings));
+    } catch (error) {
+      // console.log('Failed to reset display settings:', error); // debugs storage issues
     }
   };
-
+  
+  // prevent theme flash on app start
   if (isLoading) {
     return null;
   }
 
-  return (
-    <ThemeContext.Provider
-      value={{
-        theme,
-        displaySettings,
-        changeTheme,
-        updateDisplaySettings,
-        resetDisplaySettings,
-        // REMOVED: updateFontMultiplier
-      }}
-    >
-      {children}
-    </ThemeContext.Provider>
-  );
+  const value = {
+    theme: currentTheme,
+    setTheme: setThemePreference,
+    displaySettings,
+    updateDisplaySettings,
+    resetDisplaySettings,
+  };
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 
 export const useTheme = () => useContext(ThemeContext);

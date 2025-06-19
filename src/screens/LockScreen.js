@@ -1,53 +1,103 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useTheme } from '../theme/ThemeContext';
-import { getGlobalStyles } from '../styles/globalStyles';
+import Screen from '../components/Screen';
 
+// biometric gate -> controls app access via Face ID/Touch ID
 export default function LockScreen({ onUnlock }) {
   const { theme } = useTheme();
-  const styles = getGlobalStyles(theme);
 
-  const authenticate = async () => {
+  // biometric authentication flow -> handles hardware + enrollment checks
+  const tryToUnlock = async () => {
     try {
-      const { success, error } = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Authenticate to access Vellum',
-        fallbackLabel: 'Enter Passcode', // iOS
-        disableDeviceFallback: false, // Allow passcode
+      // hardware availability check -> prevents crashes on unsupported devices
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      // enrollment check -> ensures user has set up biometrics
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      // FIX: graceful degradation when biometrics unavailable
+      if (!hasHardware || !isEnrolled) {
+        Alert.alert(
+          'Not Available',
+          'Biometric authentication is not set up on this device.'
+        );
+        return;
+      }
+
+      // authentication prompt -> native system dialog
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Unlock to access your notes',
       });
 
-      if (success) {
-        onUnlock();
-      } else if (error) {
-        // User canceled or failed authentication
-        // Alert.alert('Authentication Failed', 'Please try again.');
+      // success callback -> triggers app unlock
+      if (result.success) {
+        // console.log('Authentication successful!'); // debugs unlock flow
+        onUnlock(); // parent callback -> hides lock screen
+      } else {
+        // console.log('Authentication failed or cancelled'); // debugs failed attempts
+        // silent failure -> user can retry manually
       }
     } catch (error) {
+      console.log('Authentication error:', error);
       Alert.alert('Error', 'An error occurred during authentication.');
+      // console.log('Biometric error details:', error); // debugs hardware issues
     }
   };
 
-  // Automatically trigger authentication when the screen loads
+  // auto-unlock attempt on mount -> seamless user experience
   useEffect(() => {
-    authenticate();
-  }, []);
+    tryToUnlock();
+  }, []); // run once -> prevents authentication loops
+
+  const styles = createStyles(theme);
 
   return (
-    <View style={[styles.container, styles.centered]}>
+    <Screen style={styles.container}>
       <Ionicons name="lock-closed" size={64} color={theme.colors.primary} />
-      <Text style={[styles.emptyStateText, { marginTop: theme.spacing.lg }]}>
-        Vellum is Locked
-      </Text>
-      <Text style={[styles.emptyStateSubtext, { marginVertical: theme.spacing.md }]}>
-        Please authenticate to continue
-      </Text>
-      <TouchableOpacity
-        style={[styles.button, { width: '60%' }]}
-        onPress={authenticate}
-      >
-        <Text style={styles.buttonText}>Unlock</Text>
+      <Text style={styles.titleText}>App Locked</Text>
+      <Text style={styles.subtitleText}>Please authenticate to continue.</Text>
+      <TouchableOpacity style={styles.button} onPress={tryToUnlock}>
+        <Text style={styles.buttonText}>Try Again</Text>
       </TouchableOpacity>
-    </View>
+    </Screen>
   );
 }
+
+// dynamic styles -> theme-aware authentication UI
+const createStyles = (theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: theme.spacing.large,
+    },
+    titleText: {
+      fontSize: theme.typography.fontSize.xlarge,
+      fontFamily: theme.typography.fontFamily.bold,
+      color: theme.colors.text,
+      marginTop: theme.spacing.large,
+    },
+    subtitleText: {
+      fontSize: theme.typography.fontSize.medium,
+      fontFamily: theme.typography.fontFamily.regular,
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
+      marginTop: theme.spacing.small,
+      marginBottom: theme.spacing.large,
+    },
+    button: {
+      backgroundColor: theme.colors.primary,
+      paddingVertical: 12,
+      paddingHorizontal: 32,
+      borderRadius: 100, 
+      marginTop: theme.spacing.medium,
+    },
+    buttonText: {
+      color: theme.colors.white,
+      fontSize: theme.typography.fontSize.medium,
+      fontFamily: theme.typography.fontFamily.semiBold,
+    },
+  });

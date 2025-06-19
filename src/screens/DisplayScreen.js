@@ -1,98 +1,102 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-import { getGlobalStyles } from '../styles/globalStyles';
 import Header from '../components/Header';
 import ListItem from '../components/ListItem';
+import Screen from '../components/Screen';
 
 export default function DisplayScreen({ navigation }) {
-  const {
-    theme,
-    displaySettings,
-    updateDisplaySettings,
-    resetDisplaySettings
-  } = useTheme();
+  const { theme, displaySettings, updateDisplaySettings, resetDisplaySettings } = useTheme();
+  const styles = createStyles(theme);
+  const { roundedCorners, showDividers, defaultView } = displaySettings;
 
-  const styles = getGlobalStyles(theme, displaySettings);
-
-  const handleReset = () => {
+  // confirmation dialog -> prevents accidental settings loss
+  const confirmAndResetSettings = () => {
     Alert.alert(
-      'Reset Settings',
-      'Are you sure you want to reset display settings to default?',
+      'Reset Display Settings',
+      'Are you sure you want to go back to the default settings?',
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => resetDisplaySettings(),
-        },
+        { text: 'Reset', style: 'destructive', onPress: resetDisplaySettings },
+        // console.log('Display settings reset to defaults'); // debugs reset behavior
       ]
     );
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <Header title="Display" navigation={navigation} />
+    <Screen>
+      <Header title="Display Settings" navigation={navigation} />
 
-      <ScrollView
-        style={styles.flex1}
-        contentContainerStyle={{ padding: theme.spacing.md }}
-      >
-        <Text style={styles.sectionTitle}>Visual Options</Text>
-
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        
+        {/* --- Appearance Section --- */}
+        <Text style={styles.sectionTitle}>Appearance</Text>
+        
         <ListItem
           label="Rounded Corners"
-          subtitle="Use rounded corners for cards"
           type="toggle"
-          value={displaySettings.roundedCorners}
-          onValueChange={(value) =>
-            updateDisplaySettings({ roundedCorners: value })
-          }
+          value={roundedCorners}
+          // partial state update -> preserves other display settings
+          onValueChange={newValue => updateDisplaySettings({ roundedCorners: newValue })}
         />
-
         <ListItem
           label="Show Dividers"
-          subtitle="Display lines between list items"
           type="toggle"
-          value={displaySettings.showDividers}
-          onValueChange={(value) =>
-            updateDisplaySettings({ showDividers: value })
-          }
+          value={showDividers}
+          onValueChange={newValue => updateDisplaySettings({ showDividers: newValue })}
         />
 
-        <Text style={styles.sectionTitle}>Default View</Text>
+        {/* --- Default View Section --- */}
+        <Text style={styles.sectionTitle}>Default Notes View</Text>
 
         <ListItem
-          label="Notes View"
-          type="value"
-          value={displaySettings.defaultView === 'Notes' ? 'Active' : ''}
+          label="List View"
+          type="selection"
+          isSelected={defaultView === 'Notes'}
           onPress={() => updateDisplaySettings({ defaultView: 'Notes' })}
         />
-
         <ListItem
           label="Gallery View"
-          type="value"
-          value={displaySettings.defaultView === 'Gallery' ? 'Active' : ''}
+          type="selection"
+          isSelected={defaultView === 'Gallery'}
           onPress={() => updateDisplaySettings({ defaultView: 'Gallery' })}
         />
 
-        <View style={{ marginTop: theme.spacing.xl }}>
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: theme.colors.danger }]}
-            onPress={handleReset}
-          >
-            <Text style={[styles.buttonText, { color: theme.colors.white }]}>
-              Reset to Defaults
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* --- Reset Button --- */}
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={confirmAndResetSettings}
+        >
+          <Text style={styles.resetButtonText}>Reset to Defaults</Text>
+        </TouchableOpacity>
       </ScrollView>
-    </View>
+    </Screen>
   );
 }
+
+const createStyles = (theme) => StyleSheet.create({
+  scrollContainer: {
+    padding: theme.spacing.medium,
+  },
+  sectionTitle: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.fontSize.small,
+    fontFamily: theme.typography.fontFamily.semiBold,
+    textTransform: 'uppercase', // visual section separation
+    marginTop: theme.spacing.large,
+    marginBottom: theme.spacing.small,
+    paddingHorizontal: theme.spacing.small,
+  },
+  resetButton: {
+    backgroundColor: theme.colors.danger,
+    padding: theme.spacing.medium,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: theme.spacing.large * 2,
+  },
+  resetButtonText: {
+    color: theme.colors.white, // high contrast on danger background
+    fontSize: theme.typography.fontSize.medium,
+    fontFamily: theme.typography.fontFamily.bold,
+  },
+});

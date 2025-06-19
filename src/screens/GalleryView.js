@@ -1,70 +1,38 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  Dimensions,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
-import { getGlobalStyles } from '../styles/globalStyles';
 
-const { width } = Dimensions.get('window');
-
-const GalleryCard = ({ item, styles, theme, onOpenNote }) => {
-  const cardWidth = (width - theme.spacing.md * 3) / 2;
+// individual card component -> reusable gallery item
+const GalleryCard = ({ note, onOpenNote }) => {
+  const { theme } = useTheme();
+  const styles = createStyles(theme);
 
   return (
     <TouchableOpacity
-      style={[
-        styles.card,
-        {
-          width: cardWidth,
-          margin: theme.spacing.md / 2,
-        },
-      ]}
-      onPress={() => onOpenNote(item)}
+      style={styles.card}
+      onPress={() => onOpenNote(note)}
+      activeOpacity={0.7} // visual feedback on press
     >
-      <View style={[styles.centered, { marginBottom: theme.spacing.sm }]}>
-        <MaterialCommunityIcons
-          name="note-text-outline"
-          size={32}
-          color={theme.colors.textSecondary}
-        />
-      </View>
-      <Text style={[styles.cardTitle, { textAlign: 'center' }]} numberOfLines={2}>
-        {item.title}
-      </Text>
-      <Text
-        style={[
-          styles.textMuted,
-          { textAlign: 'center', marginTop: 4 },
-        ]}
-      >
-        {new Date(item.createdAt).toLocaleDateString()}
+      <Text style={styles.cardTitle} numberOfLines={2}>{note.title}</Text>
+      <Text style={styles.cardDate}>
+        {new Date(note.createdAt).toLocaleDateString()}
       </Text>
     </TouchableOpacity>
   );
 };
 
-const GalleryView = ({ notes, onOpenNote }) => {
-  const { theme, displaySettings } = useTheme();
-  const styles = getGlobalStyles(theme, displaySettings);
-
-  if (notes.length === 0) {
+// grid view for notes -> 2 column layout with cards
+export default function GalleryView({ notes, onOpenNote }) {
+  const { theme } = useTheme();
+  const styles = createStyles(theme);
+  
+  // empty state handling -> to be consistent with parent NotesScreen
+  if (!notes || notes.length === 0) {
     return (
-      <View style={styles.emptyStateContainer}>
-        <MaterialCommunityIcons
-          name="image-multiple-outline"
-          size={48}
-          color={theme.colors.textMuted}
-        />
-        <Text style={styles.emptyStateText}>No Notes for Gallery</Text>
-        <Text style={styles.emptyStateSubtext}>
-          Create a note to see it here.
-        </Text>
+       <View style={styles.emptyContainer}>
+        <MaterialCommunityIcons name="image-multiple-outline" size={48} color={theme.colors.textSecondary} />
+        <Text style={styles.emptyText}>Gallery is Empty</Text>
       </View>
     );
   }
@@ -73,19 +41,47 @@ const GalleryView = ({ notes, onOpenNote }) => {
     <FlatList
       data={notes}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <GalleryCard
-          item={item}
-          styles={styles}
-          theme={theme}
-          onOpenNote={onOpenNote}
-        />
-      )}
-      numColumns={2}
+      renderItem={({ item }) => <GalleryCard note={item} onOpenNote={onOpenNote} />}
+      numColumns={2} // creates grid layout -> equal width columns
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ alignItems: 'center' }}
+      contentContainerStyle={{ padding: theme.spacing.small }}
+      // console.log('Gallery rendering', notes.length, 'notes'); // debugs data loading
     />
   );
 };
 
-export default GalleryView;
+const createStyles = (theme) => StyleSheet.create({
+  card: {
+    flex: 1, // equal width distribution in grid row
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    padding: theme.spacing.medium,
+    margin: theme.spacing.small,
+    alignItems: 'flex-start',
+    justifyContent: 'space-between', // pushes date to bottom
+    minHeight: 120, // consistent card heights
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  cardTitle: {
+    color: theme.colors.text,
+    fontSize: theme.typography.fontSize.medium,
+    fontFamily: theme.typography.fontFamily.semiBold,
+  },
+  cardDate: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.fontSize.small,
+    fontFamily: theme.typography.fontFamily.regular,
+    marginTop: theme.spacing.medium,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    marginTop: theme.spacing.medium,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.typography.fontFamily.regular,
+  },
+});

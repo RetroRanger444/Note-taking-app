@@ -1,9 +1,7 @@
 # Vellum
 
-<div align="center">
-
 ```
-██╗   ██╗███████╗██╗     ██╗     ██╗   ██║███╗   ███╗
+██╗   ██╗███████╗██╗     ██╗     ██╗   ██╗███╗   ███╗
 ██║   ██║██╔════╝██║     ██║     ██║   ██║████╗ ████║
 ██║   ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║
 ╚██╗ ██╔╝██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║
@@ -11,116 +9,70 @@
   ╚═══╝  ╚══════╝╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝
 ```
 
-</div>
+> A simple, private note-taking app for your thoughts and ideas
 
-A comprehensive productivity app that combines note-taking, task management, and calendar integration in one seamless experience.
+## About
 
-## Features
+Vellum is a lightweight note-taking application designed for personal use. Built with simplicity in mind, it provides a clean interface for capturing and organizing your notes with cloud syncing/data sharing.
 
-**Core Functionality**
-- Create and manage notes with rich text editing
-- Gamified task management system to boost productivity
-- Integrated calendar view showing all notes and tasks
-- Multiple theme options for personalized experience
-- Local data storage with seamless performance
+```
+┌─────────────────────────────┐
+│  📝 Simple Note Taking      │
+│  🔒 Private & Local         │
+│  📱 Cross-Platform Ready    │
+│  ⚡ Fast & Lightweight      │
+└─────────────────────────────┘
+```
 
-**Current Capabilities**
-- Note creation and organization
-- Task creation with gamification elements
-- Calendar integration displaying notes and tasks by date
-- Theme customization
-- Fast, offline-first experience
+## Status
 
-## Platform Support
+🚧 **Currently in Development** 🚧
 
-**Currently Available**
-- Android (APK build ready)
+This project is actively being developed. Features and functionality may change as we build towards the first release.
 
-**Planned Releases**
-- iOS version
-- Enhanced cross-platform features
-
-## Technology Stack
+## Tech Stack
 
 - **Framework:** React Native
-- **Development Platform:** Expo Go
-- **Target Platform:** Android (currently)
-- **Build Status:** APK available, requires enhancements
-
-## Development Status
-
-This application is actively under development. The core features are functional but the app requires additional polish and feature enhancements before wider release.
-
-**Current State**
-- Core functionality fully implemented
-- Android APK built and tested
-- All features accessible and functional
-- Calendar integration working
-- Theme system operational
-
-**Next Steps**
-- UI/UX improvements
-- Performance optimization
-- Cross-platform development
-- Community feedback integration
-
-## Getting Started
-
-**For Developers**
-1. Clone the repository
-2. Install dependencies with `npm install` or `yarn install`
-3. Run with Expo Go using `expo start`
-4. Test on Android device or emulator
-
-**For Users**
-- Android APK is available for testing
-- Install and provide feedback for improvements
+- **Target Platforms:** 
+  - Android (APK)
+  - Windows (Executable)
 
 ## Roadmap
 
-**Phase 1: Current Features**
-- Note-taking functionality
-- Task management with gamification
-- Calendar integration
-- Theme customization
+```
+Phase 1: Core Features        [In Progress]
+├── Basic note creation
+└── App Customization
+└── Improved design
+├── Text editing
 
-**Phase 2: Enhancement**
-- Improved user interface
-- Better performance
-- Bug fixes and stability improvements
-- Enhanced gamification features
+Phase 2: Enhanced UI          [Planned]
 
-**Phase 3: Advanced Features**
-- Cloud sync and backup options
-- Cross-platform release
-- Advanced organization tools
-- Search and filtering capabilities
-- Export and sharing features
+├── Search functionality
+└── Organization features
+├── Sync Features
 
-## Contributing
 
-This is an open source project and contributions are welcome! Whether you want to fix bugs, improve features, or suggest enhancements, your input helps make Vellum better for everyone.
+Phase 3: Multi-Platform       [Planned]
+├── Android APK release
+└── Windows executable
+├── AI Integration
+```
 
-**How to contribute:**
-- Fork the repository
-- Create a feature branch
-- Make your changes
-- Submit a pull request
+## Development
 
-## Credits
-
-**Contributors:**
-- [@retroranger444](https://github.com/retroranger444)
-- [@darkpigeon554](https://github.com/darkpigeon554)
-
-Built collaboratively with passion for productivity and clean code.
+This project is built using React Native. More development details will be added as the project progresses.
 
 ## License
 
-MIT License - Feel free to use, modify, and distribute this project.
+Private use only - Not intended for public distribution, for now.
 
 ---
 
-**Vellum** - Where productivity meets simplicity.
+<div align="center">
 
-Built with React Native and Expo for modern mobile productivity.
+**Vellum** - Simple notes, kept simple.
+
+*Built with ❤️ for personal productivity*
+
+</div>

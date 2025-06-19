@@ -1,243 +1,164 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
-import { getGlobalStyles } from '../styles/globalStyles';
 
-// Helper to create a date object in the local timezone
-const createLocalDate = (y, m, d) => new Date(y, m, d);
-
-// Helper to strip markdown for previews
-const stripMarkdown = (text = '') => {
-  return text
-    .replace(/#{1,6}\s/g, '') // Headers
-    .replace(/(\*\*|__)(.*?)\1/g, '$2') // Bold
-    .replace(/(\*|_)(.*?)\1/g, '$2') // Italic
-    .replace(/\n/g, ' '); // Newlines
+// FIX: prevents calendar showing wrong day due to timezone issues
+// parses YYYY-MM-DD string into local date object -> avoids UTC conversion
+const parseLocalDate = (dateString) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
 };
 
-const CalendarView = ({ notes, tasks = [], onDateSelect, onOpenNote }) => {
-  const { theme, displaySettings } = useTheme();
-  const styles = getGlobalStyles(theme, displaySettings);
-  const localStyles = createLocalStyles(theme);
+// calendar view -> displays notes and tasks by date with month navigation
+export default function CalendarView({ notes, tasks = [], onOpenNote }) {
+    const { theme } = useTheme();
+    const styles = createStyles(theme);
 
-  const [currentDisplayDate, setCurrentDisplayDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(null);
+    const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(null);
 
-  const dataByDate = useMemo(() => {
-    const map = {};
-    // Process notes by createdAt
-    notes.forEach(note => {
-      const noteDate = new Date(note.createdAt);
-      const dateStr = createLocalDate(noteDate.getFullYear(), noteDate.getMonth(), noteDate.getDate()).toISOString().split('T')[0];
-      if (!map[dateStr]) map[dateStr] = { notes: [], tasks: [] };
-      map[dateStr].notes.push(note);
-    });
+    // groups notes and tasks by date string -> enables calendar dot indicators
+    const groupDataByDate = (notesToGroup, tasksToGroup) => {
+        const dataMap = {};
+        notesToGroup.forEach(note => {
+            const dateString = note.createdAt.split('T')[0];
+            if (!dataMap[dateString]) dataMap[dateString] = { notes: [], tasks: [] };
+            dataMap[dateString].notes.push(note);
+        });
+        tasksToGroup.forEach(task => {
+            if (task.dueDate) {
+                const dateString = task.dueDate.split('T')[0];
+                if (!dataMap[dateString]) dataMap[dateString] = { notes: [], tasks: [] };
+                dataMap[dateString].tasks.push(task);
+            }
+        });
+        return dataMap;
+    };
+  
+    const dataByDate = groupDataByDate(notes, tasks);
 
-    // --- UPGRADE: Process tasks by dueDate ---
-    tasks.forEach(task => {
-        if (task.dueDate) { // Only map tasks that have a due date
-            // The dueDate string is 'YYYY-MM-DD'. Create a Date object from it correctly.
-            const dueDate = new Date(task.dueDate + 'T00:00:00'); 
-            const dateStr = createLocalDate(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()).toISOString().split('T')[0];
-            if (!map[dateStr]) map[dateStr] = { notes: [], tasks: [] };
-            map[dateStr].tasks.push(task);
+    // month navigation -> resets selected date to prevent stale selection
+    const changeMonth = (amount) => {
+        const newDate = new Date(currentMonthDate);
+        newDate.setMonth(newDate.getMonth() + amount);
+        setCurrentMonthDate(newDate);
+        setSelectedDate(null); // reset selection on month change
+    };
+  
+    const renderCalendarGrid = () => {
+        const year = currentMonthDate.getFullYear();
+        const month = currentMonthDate.getMonth();
+        const firstDayOfWeek = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const todayString = new Date().toISOString().split('T')[0];
+        const calendarDays = [];
+
+        // empty cells for days before month start -> proper calendar alignment
+        for (let i = 0; i < firstDayOfWeek; i++) {
+            calendarDays.push(<View key={`empty-${i}`} style={styles.dayContainer} />);
         }
-    });
 
-    return map;
-  }, [notes, tasks]);
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            const dateString = date.toISOString().split('T')[0];
+            const isToday = dateString === todayString;
+            const isSelected = selectedDate && dateString === selectedDate.toISOString().split('T')[0];
+            const hasData = dataByDate[dateString] && (dataByDate[dateString].notes.length > 0 || dataByDate[dateString].tasks.length > 0);
 
-  const navigateMonth = (direction) => {
-    setCurrentDisplayDate(prevDate => {
-      const newDate = new Date(prevDate);
-      newDate.setMonth(prevDate.getMonth() + direction);
-      return newDate;
-    });
-  };
+            calendarDays.push(
+                <TouchableOpacity key={day} style={styles.dayContainer} onPress={() => setSelectedDate(date)}>
+                    <View style={[styles.dayButton, isToday && styles.todayButton, isSelected && styles.selectedButton]}>
+                        <Text style={[styles.dayText, isSelected && styles.selectedText]}>{day}</Text>
+                        {hasData && <View style={styles.dot} />}
+                    </View>
+                </TouchableOpacity>
+            );
+        }
+        return <View style={styles.calendarGrid}>{calendarDays}</View>;
+    };
+  
+    const renderSelectedDateItems = () => {
+        if (!selectedDate) {
+            return (
+                <View style={styles.selectDayPrompt}>
+                    <Ionicons name="calendar-clear-outline" size={48} color={theme.colors.textSecondary}/>
+                    <Text style={styles.selectDayText}>Select a day to see entries</Text>
+                </View>
+            );
+        }
 
-  const handleDatePress = (date) => {
-    setSelectedDate(date);
-    onDateSelect && onDateSelect(date);
-  };
-  
-  const renderCalendarGrid = () => {
-    const year = currentDisplayDate.getFullYear();
-    const month = currentDisplayDate.getMonth();
-    const firstDayOfMonth = createLocalDate(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-  
-    const today = new Date();
-    const todayStr = createLocalDate(today.getFullYear(), today.getMonth(), today.getDate()).toISOString().split('T')[0];
-  
-    let days = [];
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<View key={`empty-${i}`} style={localStyles.dayContainer} />);
-    }
-  
-    for (let i = 1; i <= daysInMonth; i++) {
-      const date = createLocalDate(year, month, i);
-      const dateStr = date.toISOString().split('T')[0];
-      const isToday = todayStr === dateStr;
-      const isSelected = selectedDate && selectedDate.toISOString().split('T')[0] === dateStr;
-      const dayData = dataByDate[dateStr];
-      const hasContent = dayData && (dayData.notes.length > 0 || dayData.tasks.length > 0);
-  
-      days.push(
-        <TouchableOpacity
-          key={`day-${i}`}
-          style={localStyles.dayContainer}
-          onPress={() => handleDatePress(date)}
-          activeOpacity={0.7}
-        >
-          {/* --- UPGRADE: Day cell styling logic --- */}
-          <View style={[
-            localStyles.dayWrapper,
-            hasContent && !isSelected && localStyles.hasContentWrapper, // Highlight for content
-            isToday && !isSelected && localStyles.todayWrapper ,
-            isSelected && localStyles.selectedWrapper
-          ]}>
-            <Text style={[
-              styles.text, localStyles.dayText,
-              isToday && !isSelected && localStyles.todayText,
-              isSelected && localStyles.selectedText,
-            ]}>
-              {i}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-  
-    return <View style={localStyles.calendarGrid}>{days}</View>;
-  };
+        const dateString = selectedDate.toISOString().split('T')[0];
+        const dayData = dataByDate[dateString];
 
-  const renderSelectedDateItems = () => {
-    if (!selectedDate) return (
-        <View style={localStyles.selectedDateContainerEmpty}>
-            <Ionicons name="calendar-clear-outline" size={48} color={theme.colors.textMuted}/>
-            <Text style={styles.emptyStateText}>Select a Date</Text>
-            <Text style={styles.emptyStateSubtext}>Tap on a day in the calendar to see its notes and tasks.</Text>
-        </View>
-    );
+        if (!dayData || (dayData.notes.length === 0 && dayData.tasks.length === 0)) {
+            return <Text style={styles.noItemsText}>No entries for this day.</Text>;
+        }
 
-    const selectedDateStr = selectedDate.toISOString().split('T')[0];
-    const dayData = dataByDate[selectedDateStr];
-
-    if (!dayData || (dayData.notes.length === 0 && dayData.tasks.length === 0)) {
-      return (
-        <View style={localStyles.selectedDateContainer}>
-          <Text style={[styles.text, localStyles.selectedDateTitle]}>
-            {selectedDate.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </Text>
-          <Text style={[styles.textMuted, { textAlign: 'center', marginTop: theme.spacing.sm }]}>
-            No notes or tasks for this date.
-          </Text>
-        </View>
-      );
-    }
+        return (
+            <View>
+                {/* notes -> clickable for editing */}
+                {dayData.notes.map(note => (
+                    <TouchableOpacity key={`note-${note.id}`} style={styles.itemCard} onPress={() => onOpenNote?.(note)}>
+                        <Text style={styles.itemTitle} numberOfLines={1}>{note.title}</Text>
+                    </TouchableOpacity>
+                ))}
+                {/* tasks -> read-only display with completion status */}
+                {dayData.tasks.map(task => (
+                    <View key={`task-${task.id}`} style={[styles.itemCard, {flexDirection: 'row', alignItems: 'center'}]}>
+                        <Ionicons name={task.completed ? "checkmark-circle" : "ellipse-outline"} size={20} color={theme.colors.textSecondary} />
+                        <Text style={[styles.itemTitle, {marginLeft: 8}, task.completed && {textDecorationLine: 'line-through'}]}>{task.title}</Text>
+                    </View>
+                ))}
+            </View>
+        );
+    };
 
     return (
-      <View style={localStyles.selectedDateContainer}>
-        <Text style={[styles.text, localStyles.selectedDateTitle]}>
-          {selectedDate.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </Text>
-        
-        {dayData.notes.length > 0 && (
-          <View>
-            <Text style={localStyles.sectionHeader}>Notes ({dayData.notes.length})</Text>
-            {dayData.notes.map((note) => (
-              <TouchableOpacity key={note.id} style={localStyles.noteItem} onPress={() => onOpenNote && onOpenNote(note)}>
-                <Text style={localStyles.itemTitle} numberOfLines={1}>{note.title || 'Untitled Note'}</Text>
-                <Text style={localStyles.itemContent} numberOfLines={2}>{stripMarkdown(note.content)}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
+        <ScrollView>
+            <View style={styles.container}>
+                <View style={styles.monthHeader}>
+                    <TouchableOpacity onPress={() => changeMonth(-1)}><Ionicons name="chevron-back" size={28} color={theme.colors.text} /></TouchableOpacity>
+                    <Text style={styles.monthTitle}>{currentMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</Text>
+                    <TouchableOpacity onPress={() => changeMonth(1)}><Ionicons name="chevron-forward" size={28} color={theme.colors.text} /></TouchableOpacity>
+                </View>
 
-        {dayData.tasks.length > 0 && (
-          <View style={{ marginTop: theme.spacing.md }}>
-            <Text style={localStyles.sectionHeader}>Tasks ({dayData.tasks.length})</Text>
-            {dayData.tasks.map((task) => (
-              <View key={task.id} style={localStyles.taskItem}>
-                 <Ionicons name={task.completed ? "checkmark-circle" : "ellipse-outline"} size={20} color={task.completed ? theme.colors.success : theme.colors.textSecondary} />
-                 <Text style={[localStyles.itemTitle, {marginLeft: 8, color: task.completed ? theme.colors.textMuted : theme.colors.text, textDecorationLine: task.completed ? 'line-through' : 'none'}]} numberOfLines={1}>{task.title}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
+                <View style={styles.dayHeaders}>
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => <Text key={i} style={styles.dayHeaderText}>{day}</Text>)}
+                </View>
+
+                {renderCalendarGrid()}
+
+                <View style={styles.itemsSection}>
+                    <Text style={styles.itemsHeader}>
+                        {selectedDate ? selectedDate.toLocaleDateString('en-us', {weekday: 'long', month: 'long', day: 'numeric'}) : "Entries"}
+                    </Text>
+                    {renderSelectedDateItems()}
+                </View>
+            </View>
+        </ScrollView>
     );
-  };
-
-  return (
-    <ScrollView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <View style={{ padding: theme.spacing.md, paddingBottom: 100 }}>
-        <View style={localStyles.monthNavigation}>
-          <TouchableOpacity onPress={() => navigateMonth(-1)} style={styles.iconButton}>
-            <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-          <Text style={localStyles.monthTitle}>
-            {currentDisplayDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-          </Text>
-          <TouchableOpacity onPress={() => navigateMonth(1)} style={styles.iconButton}>
-            <Ionicons name="chevron-forward" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={localStyles.dayHeaders}>
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-            <Text key={index} style={[styles.textMuted, { flex: 1, textAlign: 'center', fontFamily: theme.typography.fontFamily.bold }]}>{day}</Text>
-          ))}
-        </View>
-
-        {renderCalendarGrid()}
-        
-        {renderSelectedDateItems()}
-      </View>
-    </ScrollView>
-  );
 };
 
-const createLocalStyles = (theme) =>
-  StyleSheet.create({
-    monthNavigation: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md },
-    monthTitle: { fontFamily: theme.typography.fontFamily.bold, fontSize: 20, color: theme.colors.text },
-    dayHeaders: { flexDirection: 'row', marginBottom: theme.spacing.sm },
-    calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-    dayContainer: { width: `${100/7}%`, aspectRatio: 1, justifyContent: 'center', alignItems: 'center' },
-    dayWrapper: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20, borderWidth: 2, borderColor: 'transparent' },
-    dayText: { fontSize: 16, fontFamily: theme.typography.fontFamily.medium },
-    // --- UPGRADED STYLES ---
-    hasContentWrapper: {
-        backgroundColor: theme.colors.surface,
-    },
-    todayWrapper: { 
-        borderColor: theme.colors.surface2,
-        borderWidth: 2,
-        borderColor: theme.colors.primary,
-    },
-    selectedWrapper: { 
-        backgroundColor: theme.colors.primary,
-        borderWidth: 2,
-        borderColor: theme.colors.primary,
-    },
-    todayText: { 
-        color: theme.colors.primary, 
-        fontFamily: theme.typography.fontFamily.bold 
-    },
-    selectedText: { 
-        color: theme.colors.white, 
-        fontFamily: theme.typography.fontFamily.bold 
-    },
-    selectedDateContainer: { marginTop: theme.spacing.lg, padding: theme.spacing.md, backgroundColor: theme.colors.surface, borderRadius: 12 },
-    selectedDateContainerEmpty: { ...getGlobalStyles(theme).emptyStateContainer, paddingVertical: 48 },
-    selectedDateTitle: { fontSize: 18, fontFamily: theme.typography.fontFamily.bold, textAlign: 'center', color: theme.colors.text, marginBottom: theme.spacing.md },
-    sectionHeader: { fontFamily: theme.typography.fontFamily.bold, color: theme.colors.text, marginBottom: theme.spacing.sm, fontSize: 16 },
-    noteItem: { padding: theme.spacing.md, backgroundColor: theme.colors.surface2, borderRadius: 8, marginBottom: theme.spacing.sm, borderLeftWidth: 3, borderLeftColor: theme.colors.primary },
-    taskItem: { padding: theme.spacing.md, backgroundColor: theme.colors.surface2, borderRadius: 8, marginBottom: theme.spacing.sm, borderLeftWidth: 3, borderLeftColor: theme.colors.success, flexDirection: 'row', alignItems: 'center' },
-    itemTitle: { fontFamily: theme.typography.fontFamily.medium, color: theme.colors.text, fontSize: 16, flex: 1 },
-    itemContent: { fontFamily: theme.typography.fontFamily.regular, color: theme.colors.textSecondary, marginTop: 4, fontSize: 14 },
-  });
-
-export default CalendarView;
+const createStyles = (theme) => StyleSheet.create({
+    container: { padding: theme.spacing.medium },
+    monthHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.medium },
+    monthTitle: { fontFamily: theme.typography.fontFamily.bold, fontSize: 22, color: theme.colors.text },
+    dayHeaders: { flexDirection: 'row' },
+    dayHeaderText: { flex: 1, textAlign: 'center', fontFamily: theme.typography.fontFamily.semiBold, color: theme.colors.textSecondary },
+    calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: theme.spacing.small },
+    dayContainer: { width: `${100 / 7}%`, aspectRatio: 1, justifyContent: 'center', alignItems: 'center', padding: 2 },
+    dayButton: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', borderRadius: 8 },
+    dayText: { fontSize: 16, fontFamily: theme.typography.fontFamily.regular, color: theme.colors.text },
+    todayButton: { backgroundColor: theme.colors.surface },
+    selectedButton: { backgroundColor: theme.colors.primary },
+    selectedText: { color: theme.colors.white, fontFamily: theme.typography.fontFamily.bold },
+    dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.colors.primary, position: 'absolute', bottom: 6 },
+    itemsSection: { marginTop: theme.spacing.large, borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: theme.spacing.medium },
+    itemsHeader: { fontFamily: theme.typography.fontFamily.bold, fontSize: 18, color: theme.colors.text, marginBottom: theme.spacing.medium },
+    selectDayPrompt: { alignItems: 'center', padding: 30 },
+    selectDayText: { color: theme.colors.textSecondary, marginTop: 8 },
+    noItemsText: { color: theme.colors.textSecondary, textAlign: 'center', padding: 20 },
+    itemCard: { padding: theme.spacing.medium, backgroundColor: theme.colors.surface, borderRadius: 8, marginBottom: theme.spacing.small },
+    itemTitle: { fontFamily: theme.typography.fontFamily.medium, color: theme.colors.text, fontSize: 16 },
+});

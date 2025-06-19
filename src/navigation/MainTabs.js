@@ -1,10 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-
 import { useTheme } from '../theme/ThemeContext';
 
-// Screens
+// screens that will be in the tabs
 import NotesScreen from '../screens/NotesScreen';
 import TasksScreen from '../screens/TasksScreen';
 import SearchScreen from '../screens/SearchScreen';
@@ -12,6 +11,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
+// main bottom tab navigation component
 const MainTabs = () => {
   const { theme } = useTheme();
 
@@ -21,6 +21,7 @@ const MainTabs = () => {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
+          // dynamic icon switching based on focus state
           switch (route.name) {
             case 'Notes':
               iconName = focused ? 'document-text' : 'document-text-outline';
@@ -35,22 +36,23 @@ const MainTabs = () => {
               iconName = focused ? 'settings' : 'settings-outline';
               break;
             default:
-              iconName = 'help-circle-outline';
+              // console.log('Unknown route name:', route.name); // debugs missing icon cases
+              iconName = 'help-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: theme.colors.text,
+        tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: theme.colors.background,
+          backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
-          borderTopWidth: 0.5,
         },
         tabBarLabelStyle: {
-          fontSize: theme.typography.fontSize.xs,
-          fontFamily: theme.typography.fontFamily.medium,
+          fontFamily: theme.typography.fontFamily.semiBold,
+          paddingBottom: 4,
         },
+        // hide default header -> using custom header component
         headerShown: false,
       })}
     >

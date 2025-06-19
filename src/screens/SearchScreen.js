@@ -1,179 +1,221 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../theme/ThemeContext';
-import { getGlobalStyles } from '../styles/globalStyles';
-import Header from '../components/Header';
 import { useIsFocused } from '@react-navigation/native';
+import { useTheme } from '../theme/ThemeContext';
+import Header from '../components/Header';
+import Screen from '../components/Screen';
 
-const NOTES_KEY = 'vellum_notes_v3';
-const TASKS_KEY = 'app_tasks_v3';
+// keys for cross-type search data
+const NOTES_STORAGE_KEY = 'my_notes_list';
+const TASKS_STORAGE_KEY = 'my_tasks_list';
 
-const SearchScreen = ({ navigation }) => {
-  const { theme, displaySettings } = useTheme();
-  const styles = getGlobalStyles(theme, displaySettings);
+export default function SearchScreen({ navigation }) {
+  const { theme } = useTheme();
+  const styles = createStyles(theme);
+  const isScreenFocused = useIsFocused();
+
   const [searchQuery, setSearchQuery] = useState('');
+  // source data for unified search
   const [allNotes, setAllNotes] = useState([]);
   const [allTasks, setAllTasks] = useState([]);
+  // mixed results from both data sources
   const [searchResults, setSearchResults] = useState([]);
-  const isFocused = useIsFocused();
 
+  // reload data when screen gains focus -> ensures fresh search results
   useEffect(() => {
-    if (isFocused) {
-      loadData();
-    }
-  }, [isFocused]);
+    const loadDataForSearch = async () => {
+      try {
+        const notesJSON = await AsyncStorage.getItem(NOTES_STORAGE_KEY);
+        setAllNotes(notesJSON ? JSON.parse(notesJSON) : []);
 
-  const loadData = async () => {
-    try {
-      const [storedNotes, storedTasks] = await Promise.all([
-        AsyncStorage.getItem(NOTES_KEY),
-        AsyncStorage.getItem(TASKS_KEY),
-      ]);
-      if (storedNotes) setAllNotes(JSON.parse(storedNotes));
-      if (storedTasks) setAllTasks(JSON.parse(storedTasks));
-    } catch (error) {
-      console.error('Failed to load data for search:', error);
+        const tasksJSON = await AsyncStorage.getItem(TASKS_STORAGE_KEY);
+        setAllTasks(tasksJSON ? JSON.parse(tasksJSON) : []);
+      } catch (error) {
+        console.error('Failed to load data for search:', error);
+        // console.log('Search data corruption detected:', error); // debugs storage issues
+      }
+    };
+    
+    if (isScreenFocused) {
+      loadDataForSearch();
     }
-  };
+  }, [isScreenFocused]);
 
+  // real-time search -> filters as user types
   useEffect(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (query.length > 1) {
-      const noteResults = allNotes
-        .filter(
-          (note) =>
-            note.title.toLowerCase().includes(query) ||
-            (note.content && note.content.toLowerCase().includes(query))
-        )
-        .map(n => ({ ...n, type: 'note' }));
 
-      const taskResults = allTasks
-        .filter((task) => task.title.toLowerCase().includes(query))
-        .map(t => ({ ...t, type: 'task' }));
-
-      setSearchResults([...noteResults, ...taskResults]);
-    } else {
+    // minimum query length -> prevents excessive filtering on short input
+    if (query.length < 2) {
       setSearchResults([]);
+      return;
     }
+
+    // search notes in both title and content
+    const filteredNotes = allNotes
+      .filter(note =>
+        note.title.toLowerCase().includes(query) ||
+        (note.content && note.content.toLowerCase().includes(query))
+      )
+      .map(note => ({ ...note, type: 'note' })); // type tagging for mixed results
+
+    // search tasks in title only -> tasks typically have shorter content
+    const filteredTasks = allTasks
+      .filter(task => task.title.toLowerCase().includes(query))
+      .map(task => ({ ...task, type: 'task' }));
+
+    // combine results -> notes first, then tasks
+    setSearchResults([...filteredNotes, ...filteredTasks]);
   }, [searchQuery, allNotes, allTasks]);
 
-  const renderItem = ({ item }) => {
+  const renderSearchResult = ({ item }) => {
+    // simple navigation -> just takes user to the source screen
+    const handlePress = () => {
+        if (item.type === 'note') {
+            navigation.navigate('Notes');
+        } else if (item.type === 'task') {
+            navigation.navigate('Tasks');
+        }
+        // TODO: deep linking to specific item would improve UX
+    };
+
     if (item.type === 'note') {
       return (
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate('NoteEditor', { noteId: item.id })}
-        >
-          <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 4}}>
-             <MaterialCommunityIcons name="note-text-outline" size={18} color={theme.colors.primary} style={{marginRight: 8}}/>
-             <Text style={styles.cardTitle}>{item.title}</Text>
+        <TouchableOpacity style={styles.resultCard} onPress={handlePress}>
+          <MaterialCommunityIcons name="note-text-outline" size={18} color={theme.colors.primary} style={{ marginRight: 8 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.resultTitle}>{item.title}</Text>
+            {/* content preview -> helps user identify the right note */}
+            <Text style={styles.resultContent} numberOfLines={2}>{item.content}</Text>
           </View>
-          <Text style={styles.textSecondary} numberOfLines={2}>
-            {item.content.replace(/#+\s/g, '').substring(0, 100)}
-          </Text>
         </TouchableOpacity>
       );
     }
+
     if (item.type === 'task') {
-        return (
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('Tasks', { focusedTaskId: item.id })}
-          >
-            <View style={[styles.card, {flexDirection: 'row', alignItems: 'center'}]}>
-              <Ionicons
-                name={item.completed ? 'checkmark-circle' : 'ellipse-outline'}
-                size={24}
-                color={item.completed ? theme.colors.success : theme.colors.textSecondary}
-                style={{marginRight: theme.spacing.md}}
-              />
-              <Text
-                style={[
-                  styles.listItemLabel,
-                  { opacity: item.completed ? 0.5 : 1, textDecorationLine: item.completed ? 'line-through' : 'none' },
-                ]}
-              >
-                {item.title}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )
+      return (
+        <TouchableOpacity style={styles.resultCard} onPress={handlePress}>
+          {/* visual completion status -> matches task list styling */}
+          <Ionicons name={item.completed ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={theme.colors.primary} style={{ marginRight: 8 }} />
+          <Text style={[styles.resultTitle, item.completed && styles.completedTask]}>
+            {item.title}
+          </Text>
+        </TouchableOpacity>
+      );
     }
     return null;
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <Screen>
       <Header title="Search" navigation={navigation} />
-
-      <View style={localStyles(theme).searchContainer}>
-        <Ionicons name="search" size={22} color={theme.colors.textSecondary} style={{ marginRight: theme.spacing.sm }} />
+      
+      {/* search bar with clear functionality */}
+      <View style={styles.searchBarContainer}>
+        <Ionicons name="search" size={22} color={theme.colors.textSecondary} />
         <TextInput
-          style={localStyles(theme).searchInput}
+          style={styles.searchInput}
           placeholder="Search notes and tasks..."
-          placeholderTextColor={theme.colors.textMuted}
+          placeholderTextColor={theme.colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
-          autoFocus
+          autoFocus // immediate focus -> user expects to type right away
         />
+        {/* conditional clear button -> only shows when there's text */}
         {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={22} color={theme.colors.textMuted} />
-            </TouchableOpacity>
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Ionicons name="close-circle" size={22} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
         )}
       </View>
 
       <FlatList
         data={searchResults}
+        // composite key -> prevents conflicts between notes and tasks with same ID
         keyExtractor={(item) => `${item.type}-${item.id}`}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: theme.spacing.md, paddingBottom: 20 }}
+        renderItem={renderSearchResult}
+        contentContainerStyle={{ paddingHorizontal: theme.spacing.medium, paddingBottom: 20 }}
         ListEmptyComponent={() => (
-          <View style={styles.emptyStateContainer}>
-            <Ionicons name="search-outline" size={48} color={theme.colors.textMuted} />
-            <Text style={styles.emptyStateText}>
-              {searchQuery.length > 1 ? 'No Results Found' : 'Search Ur Notes & Tasks'}
+          <View style={styles.emptyContainer}>
+            <Ionicons name="search-outline" size={48} color={theme.colors.textSecondary} />
+            {/* dynamic empty state -> changes based on search status */}
+            <Text style={styles.emptyText}>
+              {searchQuery.length > 1 ? 'No Results Found' : 'Find Anything'}
             </Text>
-            <Text style={styles.emptyStateSubtext}>
-              {searchQuery.length <= 1 ? 'Enter at least 2 chars to begin.' : ''}
+            <Text style={styles.emptySubtext}>
+              {searchQuery.length <= 1 
+                ? 'Type at least 2 letters to search.' 
+                : `No results for "${searchQuery}".`
+              }
             </Text>
           </View>
         )}
       />
-    </View>
+    </Screen>
   );
 };
 
-const localStyles = (theme) =>
-  StyleSheet.create({
-    searchContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.surface,
-      borderRadius: 12,
-      paddingHorizontal: theme.spacing.md,
-      marginHorizontal: theme.spacing.md,
-      marginBottom: theme.spacing.md,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      height: 50,
-    },
-    searchInput: {
-      flex: 1,
-      color: theme.colors.text,
-      fontSize: 16,
-      fontFamily: theme.typography.fontFamily.regular,
-      height: '100%',
-    },
-  });
-
-export default SearchScreen;
+const createStyles = (theme) => StyleSheet.create({
+  searchBarContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: theme.colors.surface, 
+    borderRadius: 12, 
+    paddingHorizontal: theme.spacing.medium, 
+    margin: theme.spacing.medium, 
+    height: 50, 
+    borderWidth: 1, 
+    borderColor: theme.colors.border 
+  },
+  searchInput: { 
+    flex: 1, 
+    color: theme.colors.text, 
+    fontSize: 16, 
+    fontFamily: theme.typography.fontFamily.regular, 
+    marginLeft: theme.spacing.small 
+  },
+  resultCard: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: theme.colors.surface, 
+    padding: theme.spacing.medium, 
+    borderRadius: 12, 
+    marginBottom: theme.spacing.small 
+  },
+  resultTitle: { 
+    color: theme.colors.text, 
+    fontFamily: theme.typography.fontFamily.semiBold, 
+    fontSize: 16 
+  },
+  resultContent: { 
+    color: theme.colors.textSecondary, 
+    fontFamily: theme.typography.fontFamily.regular, 
+    fontSize: 14, 
+    marginTop: 4 
+  },
+  completedTask: { 
+    textDecorationLine: 'line-through', 
+    color: theme.colors.textSecondary 
+  },
+  emptyContainer: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    padding: 40, 
+    marginTop: 50 
+  },
+  emptyText: { 
+    fontFamily: theme.typography.fontFamily.bold, 
+    fontSize: 18, 
+    color: theme.colors.text, 
+    marginTop: 16 
+  },
+  emptySubtext: { 
+    fontFamily: theme.typography.fontFamily.regular, 
+    fontSize: 14, 
+    color: theme.colors.textSecondary, 
+    marginTop: 8, 
+    textAlign: 'center' 
+  },
+});

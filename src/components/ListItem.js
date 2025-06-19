@@ -1,86 +1,72 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, Switch, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
-import { getGlobalStyles } from '../styles/globalStyles';
 
-const ListItem = ({
-  label,
-  subtitle,
-  onPress,
-  icon,
-  type = 'navigation', // 'navigation', 'toggle', 'value'
-  value, // for toggle or value
-  onValueChange // for toggle
-}) => {
+// reusable component for rows in settings screen.
+export default function ListItem({ label, onPress, type = 'navigation', value, onValueChange, isSelected }) {
   const { theme, displaySettings } = useTheme();
-  const styles = getGlobalStyles(theme, displaySettings);
+  
+  // console.log('ListItem rendered:', label, 'type:', type); // debugs different list item types
 
-  const renderRightContent = () => {
-    switch (type) {
-      case 'toggle':
-        return (
-          <Switch
-            value={value}
-            onValueChange={onValueChange}
-            trackColor={{ false: theme.colors.surface3, true: theme.colors.primary }}
-            thumbColor={theme.colors.white}
-            ios_backgroundColor={theme.colors.surface3}
-          />
-        );
-      case 'value':
-        return (
-          <View style={styles.listItemValueContainer}>
-            <Text style={styles.listItemValueText}>{value}</Text>
-            {onPress && (
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={theme.colors.textMuted}
-              />
-            )}
-          </View>
-        );
-      case 'navigation':
-      default:
-        return (
-          <Ionicons
-            name="chevron-forward"
-            size={20}
-            color={theme.colors.textMuted}
-          />
-        );
-    }
-  };
+  // created to get access to the theme and display settings
+  const styles = StyleSheet.create({
+    container: {
+      backgroundColor: theme.colors.surface,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: theme.spacing.medium,
+      marginBottom: theme.spacing.small,
+      // FIX: using the settings from context
+      borderRadius: displaySettings.roundedCorners ? 12 : 0,
+      borderBottomWidth: displaySettings.showDividers ? 1 : 0,
+      borderBottomColor: theme.colors.border,
+    },
+    label: {
+      color: theme.colors.text,
+      fontSize: theme.typography.fontSize.medium,
+      fontFamily: theme.typography.fontFamily.regular,
+    },
+    valueText: {
+      color: theme.colors.textSecondary,
+      fontSize: theme.typography.fontSize.medium,
+    },
+  });
 
   return (
-    <TouchableOpacity
-      style={styles.listItem}
-      onPress={onPress}
-      disabled={!onPress}
+    <TouchableOpacity 
+      onPress={onPress} 
+      disabled={type === 'toggle'} // can't press toggle items
       activeOpacity={0.7}
     >
-      <View style={styles.listItemLabelContainer}>
-        {icon && (
-          <Ionicons
-            name={icon}
-            size={20}
-            color={theme.colors.text}
-            style={styles.listItemIcon}
-          />
-        )}
-        <View style={styles.flex1}>
-          <Text style={styles.listItemLabel}>{label}</Text>
-          {subtitle && (
-            <Text style={[styles.textSecondary, { marginTop: 2 }]}>
-              {subtitle}
-            </Text>
-          )}
+      <View style={styles.container}>
+        <Text style={styles.label}>{label}</Text>
+
+        <View>
+          {/* different endings based on type */}
+          {type === 'navigation' ? (
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+          ) : null}
+
+          {type === 'toggle' ? (
+            <Switch
+              value={value}
+              onValueChange={onValueChange}
+              trackColor={{ true: theme.colors.primary }}
+              thumbColor={theme.colors.white}
+            />
+          ) : null}
+
+          {type === 'value' ? (
+            <Text style={styles.valueText}>{value}</Text>
+          ) : null}
+
+          {type === 'selection' && isSelected ? (
+             <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} />
+          ) : null}
         </View>
       </View>
-      {renderRightContent()}
     </TouchableOpacity>
   );
 };
-
-export default ListItem;

@@ -1,40 +1,39 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ActivityIndicator, StyleSheet, StatusBar } from 'react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
-import { useFonts } from 'expo-font';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SplashScreen from 'expo-splash-screen';
 
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
 import {
   Montserrat_400Regular,
-  Montserrat_500Medium,
   Montserrat_600SemiBold,
   Montserrat_700Bold,
-  Montserrat_400Regular_Italic,
 } from '@expo-google-fonts/montserrat';
+import { PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
 
-import {PressStart2P_400Regular} from '@expo-google-fonts/press-start-2p';
-
+// custom components and helpers
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import MainTabs from './src/navigation/MainTabs';
 import ThemeScreen from './src/screens/ThemeScreen';
 import DisplayScreen from './src/screens/DisplayScreen';
-import FontSizeScreen from './src/screens/FontSizeScreen';
-import LanguageScreen from './src/screens/LanguageScreen';
 import TrashScreen from './src/screens/TrashScreen';
 import LockScreen from './src/screens/LockScreen';
-import NotesScreen from './src/screens/NotesScreen';
-import TasksScreen from './src/screens/TasksScreen';
 
+// prevent auto-hide -> manual control after fonts load
 SplashScreen.preventAutoHideAsync();
 
 const Stack = createStackNavigator();
-const BIOMETRIC_ENABLED_KEY = 'biometric_auth_enabled';
+// key for persistent biometric lock preference
+const BIOMETRIC_LOCK_ENABLED_KEY = 'is_biometric_lock_enabled';
 
-function AppNavigator() {
+function AppNavigation() {
   const { theme } = useTheme();
 
+  // FIX: prevent white flash on navigation transitions
+  // override default navigation background with theme background
   const navigationTheme = {
     ...DefaultTheme,
     colors: {
@@ -47,131 +46,93 @@ function AppNavigator() {
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
         screenOptions={{
+          // hide default header -> using custom Header component
           headerShown: false,
-          cardStyle: { backgroundColor: theme.colors.background },
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+          // FIX: fade animation prevents Android flicker
+          cardStyleInterpolator: CardStyleInterpolators.forFade,
         }}
       >
         <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Screen name="Theme" component={ThemeScreen} />
-        <Stack.Screen name="FontSize" component={FontSizeScreen} />
         <Stack.Screen name="Display" component={DisplayScreen} />
-        <Stack.Screen name="Language" component={LanguageScreen} />
-        <Stack.Screen name="TasksScreen" component={TasksScreen} />
-        <Stack.Screen name="NotesScreen" component={NotesScreen} />
-        <Stack.Screen
-          name="TrashScreen"
-          component={TrashScreen}
-          options={{
-            cardStyleInterpolator: ({ current, layouts }) => {
-              return {
-                cardStyle: {
-                  transform: [
-                    {
-                      translateX: current.progress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-layouts.screen.width, 0],
-                      }),
-                    },
-                  ],
-                },
-              };
-            },
-          }}
-        />
+        <Stack.Screen name="Trash" component={TrashScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
-function AppRoot() {
-  const [isLocked, setIsLocked] = useState(true);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+// root component wrapper -> provides theme context to entire app
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
 
+function AppContent() {
+  const { theme } = useTheme();
+  const [isLocked, setIsLocked] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  const [fontsLoaded, fontError] = useFonts({
+    'Montserrat-Regular': Montserrat_400Regular,
+    'Montserrat-SemiBold': Montserrat_600SemiBold,
+    'Montserrat-Bold': Montserrat_700Bold,
+    'PressStart-Regular': PressStart2P_400Regular,
+  });
+
+  // check biometric lock preference on app start
   useEffect(() => {
-    const checkAuthSetting = async () => {
+    const checkAuthStatus = async () => {
       try {
-        const isBiometricEnabled = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
-        
-        if (isBiometricEnabled === 'true') {
-          setIsLocked(true);
-        } else {
-          setIsLocked(false);
-        }
+        const isEnabled = await AsyncStorage.getItem(BIOMETRIC_LOCK_ENABLED_KEY);
+        // default to locked if preference not found
+        setIsLocked(isEnabled === 'true');
+      } catch (e) {
+        // FIX: fallback to unlocked if storage fails
+        setIsLocked(false);
       } finally {
-        setCheckingAuth(false);
+        setIsCheckingAuth(false);
       }
     };
-
-    checkAuthSetting();
+    checkAuthStatus();
   }, []);
 
-  if (checkingAuth) {
+  // hide splash screen after fonts load
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded || fontError) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  // prevent render until fonts load and auth check completes
+  if (!fontsLoaded || isCheckingAuth) {
     return (
-      <View style={styles.loaderContainer}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FFFFFF" />
       </View>
     );
   }
 
-  if (isLocked) {
-    return <LockScreen onUnlock={() => setIsLocked(false)} />;
-  }
-
-  return <AppNavigator />;
-}
-
-export default function App() {
-  
-  const [fontsLoaded, fontsError] = useFonts({
-    'Montserrat-Regular': Montserrat_400Regular,
-    'Montserrat-Medium': Montserrat_500Medium,
-    'Montserrat-SemiBold': Montserrat_600SemiBold,
-    'Montserrat-Bold': Montserrat_700Bold,
-    'Montserrat-Italic': Montserrat_400Regular_Italic,
-    'PressStart': PressStart2P_400Regular
-  });
-
-  const [appIsReady, setAppIsReady] = useState(false);
-
-  useEffect(() => {
-    async function prepare() {
-        if (fontsLoaded || fontsError) {
-          setAppIsReady(true);
-        }
-      } 
-    prepare();
-  }, [fontsLoaded, fontsError]);
-
-  const onLayoutRootView = useCallback(async () => {
-    if (appIsReady) {
-        await SplashScreen.hideAsync();
-    }
-  }, [appIsReady]);
-
-  if (!appIsReady) {
-    return null;
-  }
-
+  // FIX: apply theme background to root view -> prevents white flash
   return (
-    <View style={styles.container} onLayout={onLayoutRootView}>
-      <ThemeProvider>
-        <StatusBar barStyle="light-content" />
-        <AppRoot />
-      </ThemeProvider>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }} onLayout={onLayoutRootView}>
+      {isLocked ? (
+        <LockScreen onUnlock={() => setIsLocked(false)} />
+      ) : (
+        <AppNavigation />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  loaderContainer: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000000',
+    // dark theme default -> prevents white flash during font loading
+    backgroundColor: '#1C1C1E',
   },
 });

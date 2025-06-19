@@ -1,56 +1,33 @@
 {
   "expo": {
     "name": "Vellum",
-    "slug": "vellum-notes",
-    "version": "1.0.0",
+    "slug": "vellum",
+    "version": "1.2.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "backgroundColor": "#000000",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#1C1C1E"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.demo.vellum"
+      "bundleIdentifier": "com.demoproject.Vellum"
     },
     "android": {
-      "versionCode": 1,
-      "package": "com.demo.vellum",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#000000"
-      }
+        "backgroundColor": "#1C1C1E"
+      },
+      "package": "com.demoproject.Vellum",
+      "backgroundColor": "#1C1C1E"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      [
-        "expo-font",
-        {
-          "fonts": [
-            "node_modules/@expo-google-fonts/inter/Inter_400Regular.ttf",
-            "node_modules/@expo-google-fonts/inter/Inter_700Bold.ttf",
-            "node_modules/@expo-google-fonts/montserrat/Montserrat_400Regular.ttf",
-            "node_modules/@expo-google-fonts/montserrat/Montserrat_500Medium.ttf",
-            "node_modules/@expo-google-fonts/montserrat/Montserrat_600SemiBold.ttf",
-            "node_modules/@expo-google-fonts/montserrat/Montserrat_700Bold.ttf",
-            "node_modules/@expo-google-fonts/press-start-2p/PressStart2P_400Regular.ttf"
-          ]
-        }
-      ],
-      "expo-splash-screen"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "325c3071-b7e3-4c6c-bd92-19cd44458f16"
-      }
     }
   }
 }
