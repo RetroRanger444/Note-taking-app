@@ -35,7 +35,7 @@ Download the latest APK for Android. Works entirely offline with no data collect
 
 1. Clone and install:
    ```bash
-   git clone [[repository-url]](https://github.com/RetroRanger444/Vellum)
+   git clone https://github.com/RetroRanger444/Vellum
    cd vellum
    npm install
    ```
