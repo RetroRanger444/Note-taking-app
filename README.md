@@ -1,121 +1,124 @@
 # Vellum
 
-Vellum is a clean, privacy-first productivity app for Android, designed to help users manage notes, tasks, and schedules seamlessly—all while staying entirely offline.
+A clean, privacy-first productivity app that helps you manage notes, tasks, and schedules seamlessly—all while staying completely offline.
 
 ## Features
 
-### Core Functionality
-- Launches directly into the Notes screen for instant access
-- Create, delete, and recover notes using a built-in Recycle Bin
-- Multiple viewing modes: Calendar View, Notes View, and Gallery View
-- Manage tasks with deadlines (due within 24 hours), track progress, and level up as you complete them
-- Powerful in-app search across notes and tasks
-- Personalize your experience with a wide range of themes and display styles
-- Enable or disable app notifications based on your preference
-- Add an extra layer of security using optional biometric authentication
-- All content is stored locally—no cloud storage, no data tracking
-- Enhanced privacy model with planned support for optional on-device encryption
-
-## Platform Support
-
-### Available Now
-- Android (via standalone APK)
-
-### Coming Soon
-- iOS version
-- Extended support for tablets, foldables, and desktop environments
+- **Notes Management**: Create, edit, and delete notes with built-in Recycle Bin
+- **Task Management**: Track tasks with deadlines through dedicated Task Screen
+- **Multiple Views**: Switch between Calendar View, Notes View, and Gallery View
+- **Search**: Quickly find any note or task with powerful in-app search
+- **Customization**: Multiple themes and display styles
+- **Security**: Optional biometric authentication
+- **Notifications**: Configurable based on your preference
 
 ## Technology Stack
 
-- **Framework:** React Native
-- **Development Platform:** Expo Go
-- **UI Design:** Tailored theme system and Montserrat font integration
-- **Target Platform:** Android (initial phase)
+- **Framework**: React Native
+- **Development Platform**: Expo Go
+- **UI Design**: Custom theme system with Montserrat font
+- **Storage**: Local offline storage
+- **Platforms**: Android (APK)
 
-## Development Status
+## Installation
 
-Vellum is fully operational on Android and under active development. Core functionality is complete and we are focused on polishing the user experience and expanding device support.
+Download the latest APK for Android. Works entirely offline with no data collection.
 
-### Current Highlights
-- Core features (Notes, Tasks, Views, Calendar) are fully functional
-- Customization system with theme switching and display preferences
-- Task leveling system and biometric authentication are live
-- Offline-first with persistent local storage
+## For Developers
 
-## Getting Started
+### Prerequisites
 
-### For Developers
+- Node.js (v14+), npm/yarn, Expo CLI
+- Android development environment
 
-To contribute or run the app locally:
+### Setup
 
-1. Clone the repository
-2. Install dependencies using your preferred package manager:
+1. Clone and install:
    ```bash
+   git clone [repository-url]
+   cd vellum
    npm install
-   # or
-   yarn install
    ```
-3. Install required fonts (Montserrat):
-   ```bash
-   npx expo install expo-font @expo-google-fonts/montserrat
-   ```
-4. Start the development server:
+
+2. Start development:
    ```bash
    npx expo start
    ```
-5. Open the app on an Android device using Expo Go
 
-> Vellum is optimized for Android. Cross-platform support is coming soon.
+3. Run on device using Expo Go app
 
-### For Testers & Users
+### Contributing
 
-- Install the latest APK build on your Android device
-- Use the app and share feedback with the developers
-- Help shape the roadmap by reporting bugs or suggesting features
+#### How to Contribute
 
-## Roadmap
+1. Fork repository and create feature branch
+2. Make changes following existing code patterns
+3. Test thoroughly on target platforms
+4. Submit pull request with clear description
 
-### Phase 1 – Foundation (Completed)
-- Core notes and task systems
-- Recycle bin and in-app search
-- Calendar view and theme customization
-- Basic biometric authentication
-- Local-only offline storage
+#### Areas for Contribution
 
-### Phase 2 – Refinement (In Progress)
-- Improved animations and transitions
-- Enhanced user interface and accessibility
-- Extended theme library and layout flexibility
-- App performance and memory optimization
-- Fine-grained notification controls
+- Bug fixes and performance improvements
+- UI/UX enhancements
+- Additional themes
+- Code optimization
+- Documentation improvements
 
-### Phase 3 – Expansion (Upcoming)
-- Cloud sync (optional, encrypted)
-- Cross-platform builds (iOS, web, tablets)
-- Secure export/import capabilities
-- Scheduled tasks and recurring reminders
-- Custom templates for notes and tasks
+#### Guidelines
 
-## Contributing
+- Follow React Native best practices
+- Maintain offline-first functionality
+- Ensure Android compatibility
+- Write clean, commented code
 
-We welcome developers, designers, and testers to contribute to Vellum.
+## Project Structure
 
-### How to Contribute
-- Fork the repository and clone it locally
-- Create a feature branch with a descriptive name
-- Implement your changes with care and consistency
-- Submit a pull request for review
+```
+vellum/
+├── src/
+│   ├── components/     # Reusable UI components
+│   ├── screens/        # App screens (Notes, Tasks, Calendar)
+│   ├── navigation/     # Navigation setup and routing
+│   └── styles/         # Theme and styling files
+├── assets/             # App icons (icon.png, splash.png, adaptive-icon.png)
+└── app.json           # Expo configuration
+```
 
-Whether you're fixing a bug or proposing a new feature, your input matters.
+## Contributors
 
-## Credits
-
-### Contributors
 - [@retroranger444](https://github.com/retroranger444)
 - [@darkpigeon554](https://github.com/darkpigeon554)
 
-Built with focus, care, and a passion for privacy-first design.
+## License
+
+MIT License
 
 ---
 
-**Vellum** – Modern note-taking. Thoughtfully offline.
+**Vellum** – Modern productivity. Thoughtfully offline.
+
+## Project Structure
+
+```
+vellum/
+├── src/
+│   ├── components/     # Reusable UI components
+│   ├── screens/        # App screens (Notes, Tasks, Calendar)
+│   ├── navigation/     # Navigation setup and routing
+│   └── styles/         # Theme and styling files
+├── assets/             # App icons (icon.png, splash.png, adaptive-icon.png)
+└── app.json           # Expo configuration
+```
+
+## Contributors
+
+- [@retroranger444](https://github.com/retroranger444)
+- [@darkpigeon554](https://github.com/darkpigeon554)
+
+## License
+
+This project is open source and available under the MIT License.
+
+---
+
+**Vellum** – Modern productivity. Thoughtfully offline.
