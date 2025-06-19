@@ -95,11 +95,8 @@ MIT License
 
 ---
 
-**Vellum** – Modern productivity. Thoughtfully offline.
-
-
 This project is open source and available under the MIT License.
 
 ---
 
-**Vellum** – Modern productivity. Thoughtfully offline.
+**Vellum**
