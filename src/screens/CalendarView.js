@@ -10,6 +10,15 @@ const parseLocalDate = (dateString) => {
     return new Date(year, month - 1, day);
 };
 
+// FIX: gets today's date in local timezone to avoid UTC conversion issues
+const getTodayString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 // calendar view -> displays notes and tasks by date with month navigation
 export default function CalendarView({ notes, tasks = [], onOpenNote }) {
     const { theme } = useTheme();
@@ -51,7 +60,7 @@ export default function CalendarView({ notes, tasks = [], onOpenNote }) {
         const month = currentMonthDate.getMonth();
         const firstDayOfWeek = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const todayString = new Date().toISOString().split('T')[0];
+        const todayString = getTodayString(); // FIX: use local timezone function
         const calendarDays = [];
 
         // empty cells for days before month start -> proper calendar alignment
@@ -61,7 +70,8 @@ export default function CalendarView({ notes, tasks = [], onOpenNote }) {
 
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
-            const dateString = date.toISOString().split('T')[0];
+            // FIX: create date string in local timezone to match todayString format
+            const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isToday = dateString === todayString;
             const isSelected = selectedDate && dateString === selectedDate.toISOString().split('T')[0];
             const hasData = dataByDate[dateString] && (dataByDate[dateString].notes.length > 0 || dataByDate[dateString].tasks.length > 0);
