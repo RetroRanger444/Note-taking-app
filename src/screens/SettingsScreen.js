@@ -112,7 +112,7 @@ export default function SettingsScreen({ navigation }) {
         
         {/* app metadata section */}
         <View style={styles.aboutContainer}>
-          <Text style={styles.aboutTitle}>Vellum</Text>
+          <Text style={styles.aboutTitle}>NOTES APP</Text>
           <Text style={styles.aboutVersion}>Version 1.2.3</Text>
         </View>
       </ScrollView>

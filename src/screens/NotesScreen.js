@@ -126,7 +126,7 @@ export default function NotesScreen({ navigation }) {
     <Screen isModalVisible={isModalVisible}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.navigate('Trash')} style={styles.headerIcon}><Ionicons name="trash-outline" size={24} color={theme.colors.textSecondary} /></TouchableOpacity>
-          <Text style={styles.headerTitle}>VELLUM</Text>
+          <Text style={styles.headerTitle}>NOTES APP</Text>
           {/* spacer view -> centers header title in flexbox */}
           <View style={styles.headerIcon} />
         </View>

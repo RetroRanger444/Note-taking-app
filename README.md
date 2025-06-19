@@ -1,4 +1,4 @@
-# Vellum
+# Note App
 
 A clean productivity app that helps you manage your notes and tasks with a built-in calendar - all while staying completely offline
 
@@ -35,8 +35,8 @@ Download the latest APK for Android. Works entirely offline with no data collect
 
 1. Clone and install:
    ```bash
-   git clone https://github.com/RetroRanger444/Vellum
-   cd vellum
+   git clone https://github.com/RetroRanger444/Note App
+   cd Note App
    npm install
    ```
 
@@ -74,7 +74,7 @@ Download the latest APK for Android. Works entirely offline with no data collect
 ## Project Structure
 
 ```
-vellum/
+Note App/
 ├── src/
 │   ├── components/     # Reusable UI components
 │   ├── screens/        # App screens 

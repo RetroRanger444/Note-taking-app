@@ -3,14 +3,11 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 
-// FIX: prevents calendar showing wrong day due to timezone issues
-// parses YYYY-MM-DD string into local date object -> avoids UTC conversion
 const parseLocalDate = (dateString) => {
     const [year, month, day] = dateString.split('-').map(Number);
     return new Date(year, month - 1, day);
 };
 
-// FIX: gets today's date in local timezone to avoid UTC conversion issues
 const getTodayString = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -19,7 +16,6 @@ const getTodayString = () => {
     return `${year}-${month}-${day}`;
 };
 
-// calendar view -> displays notes and tasks by date with month navigation
 export default function CalendarView({ notes, tasks = [], onOpenNote }) {
     const { theme } = useTheme();
     const styles = createStyles(theme);
@@ -27,7 +23,6 @@ export default function CalendarView({ notes, tasks = [], onOpenNote }) {
     const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(null);
 
-    // groups notes and tasks by date string -> enables calendar dot indicators
     const groupDataByDate = (notesToGroup, tasksToGroup) => {
         const dataMap = {};
         notesToGroup.forEach(note => {
@@ -44,40 +39,46 @@ export default function CalendarView({ notes, tasks = [], onOpenNote }) {
         });
         return dataMap;
     };
-  
+
     const dataByDate = groupDataByDate(notes, tasks);
 
-    // month navigation -> resets selected date to prevent stale selection
     const changeMonth = (amount) => {
         const newDate = new Date(currentMonthDate);
         newDate.setMonth(newDate.getMonth() + amount);
         setCurrentMonthDate(newDate);
-        setSelectedDate(null); // reset selection on month change
+        setSelectedDate(null);
     };
-  
+
     const renderCalendarGrid = () => {
         const year = currentMonthDate.getFullYear();
         const month = currentMonthDate.getMonth();
         const firstDayOfWeek = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const todayString = getTodayString(); // FIX: use local timezone function
+        const todayString = getTodayString();
         const calendarDays = [];
 
-        // empty cells for days before month start -> proper calendar alignment
         for (let i = 0; i < firstDayOfWeek; i++) {
             calendarDays.push(<View key={`empty-${i}`} style={styles.dayContainer} />);
         }
 
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
-            // FIX: create date string in local timezone to match todayString format
             const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isToday = dateString === todayString;
-            const isSelected = selectedDate && dateString === selectedDate.toISOString().split('T')[0];
+
+            const selectedString = selectedDate
+                ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
+                : null;
+
+            const isSelected = selectedDate && dateString === selectedString;
+
             const hasData = dataByDate[dateString] && (dataByDate[dateString].notes.length > 0 || dataByDate[dateString].tasks.length > 0);
 
             calendarDays.push(
-                <TouchableOpacity key={day} style={styles.dayContainer} onPress={() => setSelectedDate(date)}>
+                <TouchableOpacity
+                    key={day}
+                    style={styles.dayContainer}
+                    onPress={() => setSelectedDate(parseLocalDate(dateString))}>
                     <View style={[styles.dayButton, isToday && styles.todayButton, isSelected && styles.selectedButton]}>
                         <Text style={[styles.dayText, isSelected && styles.selectedText]}>{day}</Text>
                         {hasData && <View style={styles.dot} />}
@@ -87,7 +88,7 @@ export default function CalendarView({ notes, tasks = [], onOpenNote }) {
         }
         return <View style={styles.calendarGrid}>{calendarDays}</View>;
     };
-  
+
     const renderSelectedDateItems = () => {
         if (!selectedDate) {
             return (
@@ -98,7 +99,7 @@ export default function CalendarView({ notes, tasks = [], onOpenNote }) {
             );
         }
 
-        const dateString = selectedDate.toISOString().split('T')[0];
+        const dateString = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
         const dayData = dataByDate[dateString];
 
         if (!dayData || (dayData.notes.length === 0 && dayData.tasks.length === 0)) {
@@ -107,13 +108,11 @@ export default function CalendarView({ notes, tasks = [], onOpenNote }) {
 
         return (
             <View>
-                {/* notes -> clickable for editing */}
                 {dayData.notes.map(note => (
                     <TouchableOpacity key={`note-${note.id}`} style={styles.itemCard} onPress={() => onOpenNote?.(note)}>
                         <Text style={styles.itemTitle} numberOfLines={1}>{note.title}</Text>
                     </TouchableOpacity>
                 ))}
-                {/* tasks -> read-only display with completion status */}
                 {dayData.tasks.map(task => (
                     <View key={`task-${task.id}`} style={[styles.itemCard, {flexDirection: 'row', alignItems: 'center'}]}>
                         <Ionicons name={task.completed ? "checkmark-circle" : "ellipse-outline"} size={20} color={theme.colors.textSecondary} />
