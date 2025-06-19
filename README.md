@@ -1,6 +1,6 @@
 # Vellum
 
-Productivity app that helps you manage notes, tasks, and provides a calender, while staying completely offline.
+A clean productivity app that helps you manage your notes and tasks with a built-in calendar - all while staying completely offline
 
 ## Features
 
