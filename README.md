@@ -84,10 +84,6 @@ Note App/
 └── app.json           # Expo configuration
 ```
 
-## Contributors
-
-- [@retroranger444](https://github.com/retroranger444)
-- [@darkpigeon554](https://github.com/darkpigeon554)
 
 ## License
 
