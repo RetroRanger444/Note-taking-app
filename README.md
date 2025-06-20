@@ -79,7 +79,7 @@ Note App/
 │   ├── components/     # Reusable UI components
 │   ├── screens/        # App screens 
 │   ├── navigation/     # Navigation setup and routing
-│   └── styles/         # Theme and styling files
+│   └── themes/         # Theme and styling files
 ├── assets/             # App icons (icon.png, splash.png, adaptive-icon.png)
 └── app.json           # Expo configuration
 ```
