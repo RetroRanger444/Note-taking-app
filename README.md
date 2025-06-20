@@ -35,8 +35,8 @@ Download the latest APK for Android. Works entirely offline with no data collect
 
 1. Clone and install:
    ```bash
-   git clone https://github.com/RetroRanger444/Note App
-   cd Note App
+   git clone (https://github.com/RetroRanger444/Note-taking-app)
+   cd Note-taking-app-main
    npm install
    ```
 
