@@ -11,7 +11,6 @@ We wanted to create something we'd actually use daily, so we focused on:
 - **Search**: Find anything quickly with the search feature
 - **Themes**: Multiple color schemes because why not make it look nice?
 - **Biometric Auth**: Optional fingerprint/face unlock for privacy
-- **Smart Notifications**: Customizable reminders that actually work
 
 Everything runs offline - no accounts, no data collection, just your notes staying on your device.
 
