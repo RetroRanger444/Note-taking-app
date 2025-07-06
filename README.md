@@ -1,6 +1,6 @@
 # Note App
 
-A productivity app my friend and I built to learn React Native and Expo. What started as a simple note-taking idea turned into a full-featured app with calendar integration, themes, and biometric security.
+A productivity app we built to learn React Native and Expo. What started as a simple note-taking idea turned into a full-featured app with calendar integration, themes, and biometric security.
 
 ## What it does
 
