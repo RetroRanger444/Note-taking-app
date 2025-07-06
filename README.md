@@ -81,10 +81,27 @@ Feel free to fork and improve! We'd love to see what others do with it. Some are
 
 Just make sure to keep the offline-first approach - that was core to what we wanted to achieve.
 
+## What's next?
+
+Honestly, we're not sure! This started as a learning project and accomplished what we set out to do - we learned React Native, built something functional, and now understand mobile development much better.
+
+**Possible future improvements** (if we or others want to tackle them):
+- **iOS optimization** - The code should work on iOS but needs proper testing and tweaking
+- **Performance upgrades** - Handle larger datasets better, smoother animations
+- **Cloud sync option** - While keeping offline-first, maybe add optional cloud backup
+- **More themes** - Dark mode variations, custom color schemes
+- **Better accessibility** - Screen reader support, better contrast options
+- **Export features** - PDF export, backup/restore functionality
+- **Collaboration** - Share notes with others (though this would require a big architecture change)
+
+ We're both busy with other projects and studies, so active development will probably be slow. But we're genuinely excited if others want to contribute or fork the project to take it in new directions.
+
+If you build something cool with this code, let us know! We'd love to see what others create.
+
 ## License
 
 MIT License - use it however you want!
 
 ---
 
-*Built with curiosity and caffeine*
+*Built with curiosity and caffeinet*
